@@ -131,6 +131,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .bottom-pad{height:1rem}
 
+/* BREAK SHEET */
+.break-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:11px 1rem;background:#fff;border-bottom:1px solid #f0f0ec;gap:12px}
+.break-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.break-time{font-size:12px;color:#888;margin-top:2px}
+.break-boxes{display:flex;gap:8px;flex-shrink:0}
+.break-box{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.break-box-label{font-size:10px;font-weight:600;color:#888}
+.break-checkbox{width:28px;height:28px;border-radius:6px;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.break-checkbox.checked{background:#1D9E75;border-color:#1D9E75}
+.break-checkbox.checked::after{content:'✓';color:#fff;font-size:14px;font-weight:700}
+.break-day-btn{display:inline-block;padding:5px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#555;font-family:inherit;margin-right:6px;white-space:nowrap}
+.break-day-btn.active{background:#d4000a;color:#fff;border-color:#d4000a}
+
 /* TOILET ALERT POPUP */
 #toilet-alert-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;padding:1.5rem}
 #toilet-alert-overlay.visible{display:flex}
@@ -266,6 +279,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="bottom-pad"></div>
     </div>
 
+    <!-- PAGE: BREAKS -->
+    <div class="page" id="page-breaks">
+      <div class="page-header">
+        <h2>Break sheet</h2>
+        <p>Paste the weekly schedule text, then select a day</p>
+      </div>
+
+      <div style="padding:12px;background:#fff;border-bottom:1px solid #e5e5e0">
+        <label style="font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:5px">Paste weekly schedule text here</label>
+        <textarea id="breaks-paste" rows="5" placeholder="Paste the text from your weekly PDF here..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:13px;font-family:inherit;resize:vertical;background:#fafafa"></textarea>
+        <button onclick="parseBreakSchedule()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;background:#d4000a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Load schedule</button>
+      </div>
+
+      <div id="breaks-day-selector" style="display:none;overflow-x:auto;white-space:nowrap;padding:10px 12px;background:#fff;border-bottom:1px solid #e5e5e0;scrollbar-width:none"></div>
+
+      <div id="breaks-list"></div>
+      <div class="bottom-pad"></div>
+    </div>
+
   </div><!-- end content -->
 
   <!-- BOTTOM NAV -->
@@ -281,6 +313,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </button>
     <button class="nav-btn" id="nav-toilet" onclick="showPage('toilet')">
       <span class="nav-icon">🚻</span>Toilets
+    </button>
+    <button class="nav-btn" id="nav-breaks" onclick="showPage('breaks')">
+      <span class="nav-icon">☕</span>Breaks
     </button>
   </div>
 </div><!-- end app-screen -->
@@ -1297,7 +1332,137 @@ function showToast(msg) {
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
-// ─── DAILY RESET ─────────────────────────────────────────────────────
+// ─── BREAK SHEET ─────────────────────────────────────────────────────
+let breakSchedule = {}; // { 'Mon 11': [{name, start, end, startMins}], ... }
+let breakDays = [];
+let selectedBreakDay = null;
+let breakChecked = {}; // { 'Name_day': {30: bool, 15: bool} }
+
+function parseBreakSchedule() {
+  const raw = document.getElementById('breaks-paste').value.trim();
+  if (!raw) return;
+
+  const btn = document.querySelector('#page-breaks button[onclick="parseBreakSchedule()"]');
+  btn.textContent = 'Parsing schedule...';
+  btn.disabled = true;
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: 'Parse this weekly staff schedule into JSON. Return ONLY valid JSON, no markdown, no explanation.\n\nThe format should be:\n{"days":["Mon 11","Tue 12",...], "schedule":{"Mon 11":[{"name":"Anna Smith","start":"06:00","end":"14:30"},...], ...}}\n\nRules:\n- Each day key must match exactly the day labels found in the text (e.g. Mon 11, Fri 15)\n- Sort each day staff by start time ascending\n- If a shift ends after midnight (e.g. 17:00 - 01:00), keep it on the START day\n- Only include staff who work that specific day\n- Days in chronological order\n\nSchedule text:\n' + raw
+      }]
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.textContent = 'Load schedule';
+    btn.disabled = false;
+    const text = (data.content && data.content[0] && data.content[0].text) || '';
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      document.getElementById('breaks-list').innerHTML = '<div class="empty-state">Could not parse the schedule. Please try again.</div>';
+      return;
+    }
+    breakSchedule = {};
+    breakDays = parsed.days || [];
+    breakDays.forEach(day => {
+      breakSchedule[day] = (parsed.schedule[day] || []).map(p => ({
+        name: p.name, start: p.start, end: p.end, startMins: timeToMins(p.start)
+      }));
+    });
+    if (breakDays.length === 0) {
+      document.getElementById('breaks-list').innerHTML = '<div class="empty-state">No days found. Please check the pasted text.</div>';
+      return;
+    }
+    const now = new Date();
+    const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+    const todayNum = now.getDate();
+    selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
+      || breakDays.find(d => d.startsWith(todayShort))
+      || breakDays[0];
+    renderBreakDaySelector();
+    renderBreakSheet();
+    document.getElementById('breaks-day-selector').style.display = 'block';
+  })
+  .catch(err => {
+    btn.textContent = 'Load schedule';
+    btn.disabled = false;
+    document.getElementById('breaks-list').innerHTML = '<div class="empty-state">Error connecting to parser. Please try again.</div>';
+    console.error(err);
+  });
+}
+
+function timeToMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function renderBreakDaySelector() {
+  const html = breakDays.map(day =>
+    `<button class="break-day-btn${day === selectedBreakDay ? ' active' : ''}" onclick="selectBreakDay('${day}')">${day}</button>`
+  ).join('');
+  document.getElementById('breaks-day-selector').innerHTML = html;
+}
+
+function selectBreakDay(day) {
+  selectedBreakDay = day;
+  renderBreakDaySelector();
+  renderBreakSheet();
+}
+
+function renderBreakSheet() {
+  const staff = breakSchedule[selectedBreakDay] || [];
+  if (staff.length === 0) {
+    document.getElementById('breaks-list').innerHTML = '<div class="empty-state">No staff scheduled for this day</div>';
+    return;
+  }
+
+  const countEl = staff.length;
+  let html = `<div class="section-header"><span>${selectedBreakDay} — ${countEl} staff</span><span></span></div>`;
+
+  staff.forEach(person => {
+    const key = person.name + '_' + selectedBreakDay;
+    const b30 = breakChecked[key]?.['30'] || false;
+    const b15 = breakChecked[key]?.['15'] || false;
+    const safeName = person.name.replace(/'/g, "\\'");
+    const safeDay  = selectedBreakDay.replace(/'/g, "\\'");
+    html += `<div class="break-row">
+      <div>
+        <div class="break-name">${person.name}</div>
+        <div class="break-time">${person.start} – ${person.end}</div>
+      </div>
+      <div class="break-boxes">
+        <div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','30')">
+          <span class="break-box-label">30</span>
+          <div class="break-checkbox${b30?' checked':''}"></div>
+        </div>
+        <div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','15')">
+          <span class="break-box-label">15</span>
+          <div class="break-checkbox${b15?' checked':''}"></div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('breaks-list').innerHTML = html;
+}
+
+function toggleBreak(name, day, type) {
+  const key = name + '_' + day;
+  if (!breakChecked[key]) breakChecked[key] = {};
+  breakChecked[key][type] = !breakChecked[key][type];
+  renderBreakSheet();
+}
+
+
 function cleanupOldData() {
   const s = getState();
   const today = todayKey();
