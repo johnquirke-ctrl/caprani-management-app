@@ -854,29 +854,15 @@ function logToiletCheck() {
   const now = new Date();
   const nowMins = now.getHours()*60 + now.getMinutes();
   const slots = getToiletSlots();
-  // Find nearest unchecked slot at or before now
-  const logs = getToiletLogs();
-  const checkedSlots = new Set(logs.map(l=>l.slot));
-  // Find the most recent past slot not yet checked
+
+  // Find the slot closest to now — the one whose time is nearest (past or future within 15 mins)
   let bestSlot = null;
-  for (let i = slots.length-1; i >= 0; i--) {
-    const slotMins = slots[i].h*60 + slots[i].m;
-    if (slotMins <= nowMins && !checkedSlots.has(slots[i].label)) {
-      bestSlot = slots[i].label;
-      break;
-    }
-  }
-  // If all past slots done, still log with current time slot
-  if (!bestSlot) {
-    // find next upcoming slot
-    for (let i = 0; i < slots.length; i++) {
-      const slotMins = slots[i].h*60 + slots[i].m;
-      if (slotMins > nowMins && !checkedSlots.has(slots[i].label)) {
-        bestSlot = slots[i].label; break;
-      }
-    }
-  }
-  if (!bestSlot && slots.length > 0) bestSlot = slots[slots.length-1].label;
+  let bestDiff = Infinity;
+  slots.forEach(slot => {
+    const slotMins = slot.h*60 + slot.m;
+    const diff = Math.abs(slotMins - nowMins);
+    if (diff < bestDiff) { bestDiff = diff; bestSlot = slot.label; }
+  });
 
   const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const s = getState();
