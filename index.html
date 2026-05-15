@@ -946,7 +946,20 @@ function renderToilet() {
   listEl.innerHTML = html || '<div class="empty-state">No slots yet today</div>';
 
   const slotsDueByNow = slots.filter(slot => (slot.h*60 + slot.m) <= nowMins).length;
-  document.getElementById('toilet-count').textContent = doneCnt + ' of ' + slotsDueByNow + ' checks done';
+  const displayDone = Math.min(doneCnt, slotsDueByNow);
+  document.getElementById('toilet-count').textContent = displayDone + ' of ' + slotsDueByNow + ' checks done';
+}
+
+function removeToiletCheck(slotLabel) {
+  if (!confirm('Remove the check for ' + slotLabel + '?')) return;
+  const s = getState();
+  if (!s.toiletLog || !s.toiletLog[todayKey()]) return;
+  // Remove the most recent log entry for this slot
+  const logs = s.toiletLog[todayKey()];
+  const idx = logs.map(l => l.slot).lastIndexOf(slotLabel);
+  if (idx > -1) logs.splice(idx, 1);
+  saveState(s);
+  renderToilet();
 }
 
 function toggleToiletHistory(headerEl) {
