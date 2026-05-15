@@ -580,6 +580,23 @@ function doLogout() {
 
 // ─── APP INIT ────────────────────────────────────────────────────────
 function initApp() {
+  // Restore break schedule from localStorage if available
+  const saved = getState();
+  if (saved.breakSchedule && saved.breakDays && saved.breakDays.length > 0) {
+    breakSchedule = saved.breakSchedule;
+    breakDays = saved.breakDays;
+    const now = new Date();
+    const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+    const todayNum = now.getDate();
+    selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
+      || breakDays.find(d => d.startsWith(todayShort))
+      || breakDays[0];
+    document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+    document.getElementById('breaks-day-selector').style.display = 'block';
+    renderBreakDaySelector();
+    renderBreakSheet();
+  }
+
   updateDateTime();
   setInterval(updateDateTime, 30000);
   setInterval(renderToilet, 60000); // refresh toilet timeline every minute
@@ -1367,16 +1384,15 @@ async function handleBreaksPDF(file) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    // Collect ALL items with x,y positions across all pages
-    const allRows = []; // [{y, items:[{text,x}]}]
+    // Process each page separately, offset Y by page to avoid collisions
+    const allRows = [];
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
       const tc = await page.getTextContent();
-      // Group items by Y row (tolerance 4px)
+      const pageOffset = (p - 1) * 10000; // large offset per page
       const rowMap = {};
       tc.items.forEach(item => {
-        const y = Math.round(item.transform[5]);
-        // Find existing row within tolerance
+        const y = Math.round(item.transform[5]) + pageOffset;
         let key = Object.keys(rowMap).find(k => Math.abs(parseInt(k) - y) <= 4);
         if (!key) { key = y; rowMap[key] = []; }
         rowMap[key].push({ text: item.str.trim(), x: Math.round(item.transform[4]) });
@@ -1387,7 +1403,7 @@ async function handleBreaksPDF(file) {
         }
       });
     }
-    // Sort rows top-to-bottom (higher Y = higher on page in PDF coords)
+    // Sort rows top-to-bottom within each page (higher Y = higher on page in PDF coords)
     allRows.sort((a, b) => b.y - a.y);
 
     parseBreakSchedule(allRows);
@@ -1407,20 +1423,22 @@ function parseBreakSchedule(allRows) {
   const timeRe = /^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/;
   const skipRe = /^(page:|schedule report|week schedule|store:|\d{2}\/\d{2}\/\d{4})/i;
 
-  // Step 1: find the header row(s) containing day labels (Mon 11, Tue 12 etc)
-  // Day labels may be split across 2 rows in the PDF
-  let dayColumns = []; // [{label, x}]
-  allRows.forEach(row => {
-    row.items.forEach(item => {
-      const m = item.text.match(dayRe);
-      if (m) {
+  // Step 1: find day columns from the FIRST header row only
+  let dayColumns = [];
+  for (const row of allRows) {
+    const dayItems = row.items.filter(i => dayRe.test(i.text));
+    if (dayItems.length >= 2) {
+      // This is a header row
+      dayItems.forEach(item => {
+        const m = item.text.match(dayRe);
         const label = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' ' + parseInt(m[2]);
         if (!dayColumns.find(d => d.label === label)) {
           dayColumns.push({ label, x: item.x });
         }
-      }
-    });
-  });
+      });
+      if (dayColumns.length >= 2) break; // got enough from first header
+    }
+  }
 
   if (dayColumns.length === 0) {
     document.getElementById('breaks-loading').style.display = 'none';
@@ -1429,49 +1447,73 @@ function parseBreakSchedule(allRows) {
     return;
   }
 
-  // Sort day columns by X position (left to right)
   dayColumns.sort((a, b) => a.x - b.x);
   breakDays = dayColumns.map(d => d.label);
   breakDays.forEach(d => { breakSchedule[d] = []; });
 
-  // Step 2: for each data row, find name (leftmost text) + time ranges
-  // Assign each time range to the day column whose X is closest
+  // Column width — distance between day headers
+  const colWidth = dayColumns.length > 1 ? dayColumns[1].x - dayColumns[0].x : 80;
+
+  // Step 2: for each data row, extract name + time ranges with X positions
   allRows.forEach(row => {
     const texts = row.items.filter(i => i.text.length > 0);
     if (texts.length === 0) return;
 
-    // Skip header/footer rows
     const rowText = texts.map(i => i.text).join(' ');
     if (skipRe.test(rowText)) return;
-    if (texts.every(i => dayRe.test(i.text))) return; // pure header row
+    if (texts.every(i => dayRe.test(i.text))) return;
+    if (texts.every(i => dayRe.test(i.text) || /^\d+$/.test(i.text))) return;
 
-    // Find time ranges in this row
+    // Find all time ranges with their X positions
+    // Times appear as separate tokens: "06:00" "-" "14:30" or "06:00 - 14:30"
     const timePairs = [];
-    // Look for adjacent items forming "HH:MM - HH:MM" or single items with full range
     for (let i = 0; i < texts.length; i++) {
-      const full = texts[i].text + (texts[i+1] ? ' ' + texts[i+1].text : '') + (texts[i+2] ? ' ' + texts[i+2].text : '');
-      const m = full.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-      if (m) {
-        timePairs.push({ start: m[1], end: m[2], x: texts[i].x });
-        i += 2; // skip the consumed items
+      const t = texts[i];
+      // Check for "HH:MM - HH:MM" in a single token
+      const full = timeRe.exec(t.text);
+      if (full) {
+        timePairs.push({ start: full[1], end: full[2], x: t.x });
         continue;
       }
-      // Single item with full range
-      const m2 = texts[i].text.match(timeRe);
-      if (m2) {
-        timePairs.push({ start: m2[1], end: m2[2], x: texts[i].x });
+      // Check for "HH:MM" followed by "-" and "HH:MM" across tokens
+      if (/^\d{1,2}:\d{2}$/.test(t.text) && texts[i+1] && texts[i+2]) {
+        const sep = texts[i+1].text;
+        const end = texts[i+2].text;
+        if ((sep === '-' || sep === '–') && /^\d{1,2}:\d{2}$/.test(end)) {
+          timePairs.push({ start: t.text, end, x: t.x });
+          i += 2;
+          continue;
+        }
+      }
+      // Check for "HH:MM" "-" adjacent (no separator token)
+      if (/^\d{1,2}:\d{2}$/.test(t.text) && texts[i+1] && /^\d{1,2}:\d{2}$/.test(texts[i+1].text)) {
+        timePairs.push({ start: t.text, end: texts[i+1].text, x: t.x });
+        i += 1;
+        continue;
+      }
+      // Check for compound like "06:00-14:30"
+      const compound = t.text.match(/^(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/);
+      if (compound) {
+        timePairs.push({ start: compound[1], end: compound[2], x: t.x });
       }
     }
 
     if (timePairs.length === 0) return;
 
-    // Name = leftmost non-time, non-day text item
-    const nameItems = texts.filter(i => !timeRe.test(i.text) && !dayRe.test(i.text) && !/^-$/.test(i.text) && !/^\d{1,2}$/.test(i.text));
+    // Name = non-time, non-day items to the left of first time
+    const firstTimeX = timePairs[0].x;
+    const nameItems = texts.filter(i =>
+      i.x < firstTimeX &&
+      !timeRe.test(i.text) &&
+      !dayRe.test(i.text) &&
+      !/^-$/.test(i.text) &&
+      !/^\d{1,2}$/.test(i.text)
+    );
     if (nameItems.length === 0) return;
     const name = nameItems.map(i => i.text).join(' ').trim();
     if (!name || name.length < 2) return;
 
-    // Assign each time pair to nearest day column by X position
+    // Assign each time to nearest day column by X
     timePairs.forEach(tp => {
       let nearest = dayColumns[0];
       let minDist = Math.abs(tp.x - dayColumns[0].x);
@@ -1479,7 +1521,10 @@ function parseBreakSchedule(allRows) {
         const dist = Math.abs(tp.x - dc.x);
         if (dist < minDist) { minDist = dist; nearest = dc; }
       });
-      breakSchedule[nearest.label].push({ name, start: tp.start, end: tp.end, startMins: timeToMins(tp.start) });
+      // Only assign if within reasonable distance of a column (1.5x column width)
+      if (minDist <= colWidth * 1.5) {
+        breakSchedule[nearest.label].push({ name, start: tp.start, end: tp.end, startMins: timeToMins(tp.start) });
+      }
     });
   });
 
@@ -1496,17 +1541,16 @@ function parseBreakSchedule(allRows) {
     || breakDays.find(d => d.startsWith(todayShort))
     || breakDays[0];
 
-  // DEBUG — log what was parsed so we can diagnose
-  console.log('=== BREAK SHEET DEBUG ===');
-  console.log('Days found:', breakDays);
-  console.log('Day columns (x positions):', dayColumns.map(d => d.label + ' @ x=' + d.x));
-  breakDays.forEach(day => {
-    console.log(day + ':', breakSchedule[day].map(s => s.name + ' ' + s.start + '-' + s.end));
-  });
-
   document.getElementById('breaks-loading').style.display = 'none';
   document.getElementById('breaks-upload-area').style.display = 'block';
   document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+
+  // Persist to localStorage
+  const s = getState();
+  s.breakSchedule = breakSchedule;
+  s.breakDays = breakDays;
+  saveState(s);
+
   renderBreakDaySelector();
   renderBreakSheet();
   document.getElementById('breaks-day-selector').style.display = 'block';
@@ -1516,6 +1560,10 @@ function resetBreaksUpload() {
   breakSchedule = {};
   breakDays = [];
   selectedBreakDay = null;
+  const s = getState();
+  delete s.breakSchedule;
+  delete s.breakDays;
+  saveState(s);
   const area = document.getElementById('breaks-upload-area');
   area.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📄</div>' +
     '<div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Drop PDF here or tap to upload</div>' +
@@ -1556,25 +1604,55 @@ function renderBreakSheet() {
 
   staff.forEach(person => {
     const key = person.name + '_' + selectedBreakDay;
-    const b30 = breakChecked[key]?.['30'] || false;
-    const b15 = breakChecked[key]?.['15'] || false;
     const safeName = person.name.replace(/'/g, "\\'");
     const safeDay  = selectedBreakDay.replace(/'/g, "\\'");
+
+    // Calculate shift length in minutes (handle overnight shifts)
+    let endMins = timeToMins(person.end);
+    if (endMins <= person.startMins) endMins += 24 * 60; // overnight
+    const shiftMins = endMins - person.startMins;
+    const shiftHours = shiftMins / 60;
+
+    // Determine breaks based on NET working time (shift minus breaks)
+    // Iterate to find stable solution
+    let breaks = [];
+    for (let i = 0; i < 3; i++) {
+      const breakMins = breaks.reduce((sum, b) => sum + parseInt(b), 0);
+      const netHours = (shiftMins - breakMins) / 60;
+      let newBreaks = [];
+      if (netHours >= 9) {
+        newBreaks = ['45', '15'];
+      } else if (netHours >= 6) {
+        newBreaks = ['30', '15'];
+      } else if (netHours >= 4.5) {
+        newBreaks = ['30'];
+      } else if (netHours >= 4) {
+        newBreaks = ['15'];
+      }
+      if (JSON.stringify(newBreaks) === JSON.stringify(breaks)) break;
+      breaks = newBreaks;
+    }
+
+    const breakBoxesHtml = breaks.length === 0
+      ? '<span style="font-size:12px;color:#ccc">No break</span>'
+      : breaks.map(b => {
+          const checked = breakChecked[key]?.[b] || false;
+          return `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
+            <span class="break-box-label">${b}</span>
+            <div class="break-checkbox${checked?' checked':''}"></div>
+          </div>`;
+        }).join('');
+
+    const breakMins = breaks.reduce((sum, b) => sum + parseInt(b), 0);
+    const netHours = (shiftMins - breakMins) / 60;
+    const netDisplay = netHours.toFixed(2) + 'h';
+
     html += `<div class="break-row">
       <div>
         <div class="break-name">${person.name}</div>
-        <div class="break-time">${person.start} – ${person.end}</div>
+        <div class="break-time">${person.start} – ${person.end} <span style="color:#bbb;font-size:11px">(${netDisplay} net)</span></div>
       </div>
-      <div class="break-boxes">
-        <div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','30')">
-          <span class="break-box-label">30</span>
-          <div class="break-checkbox${b30?' checked':''}"></div>
-        </div>
-        <div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','15')">
-          <span class="break-box-label">15</span>
-          <div class="break-checkbox${b15?' checked':''}"></div>
-        </div>
-      </div>
+      <div class="break-boxes">${breakBoxesHtml}</div>
     </div>`;
   });
 
