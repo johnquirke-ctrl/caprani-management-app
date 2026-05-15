@@ -1352,58 +1352,45 @@ async function handleBreaksPDF(file) {
     document.getElementById('breaks-list').innerHTML = '<div class="empty-state">Please upload a PDF file.</div>';
     return;
   }
-
   document.getElementById('breaks-upload-area').style.display = 'none';
   document.getElementById('breaks-loading').style.display = 'block';
-
   try {
-    // Load pdf.js
     if (!window.pdfjsLib) {
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        s.onload = resolve;
-        s.onerror = reject;
+        s.onload = resolve; s.onerror = reject;
         document.head.appendChild(s);
       });
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
-
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      // Get text items sorted by Y then X position to preserve table structure
-      const items = content.items.sort((a, b) => {
-        const yDiff = Math.round(b.transform[5]) - Math.round(a.transform[5]);
-        if (Math.abs(yDiff) > 3) return yDiff;
-        return a.transform[4] - b.transform[4];
-      });
-      // Group into rows by Y position
-      const rows = [];
-      let currentRow = [];
-      let lastY = null;
-      items.forEach(item => {
+    // Collect ALL items with x,y positions across all pages
+    const allRows = []; // [{y, items:[{text,x}]}]
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      // Group items by Y row (tolerance 4px)
+      const rowMap = {};
+      tc.items.forEach(item => {
         const y = Math.round(item.transform[5]);
-        if (lastY !== null && Math.abs(y - lastY) > 3) {
-          if (currentRow.length) rows.push(currentRow);
-          currentRow = [];
-        }
-        currentRow.push({ text: item.str, x: item.transform[4], y });
-        lastY = y;
+        // Find existing row within tolerance
+        let key = Object.keys(rowMap).find(k => Math.abs(parseInt(k) - y) <= 4);
+        if (!key) { key = y; rowMap[key] = []; }
+        rowMap[key].push({ text: item.str.trim(), x: Math.round(item.transform[4]) });
       });
-      if (currentRow.length) rows.push(currentRow);
-      // Convert rows to text lines
-      rows.forEach(row => {
-        fullText += row.map(i => i.text).join(' ') + '\n';
+      Object.entries(rowMap).forEach(([y, items]) => {
+        if (items.some(i => i.text)) {
+          allRows.push({ y: parseInt(y), items: items.sort((a,b) => a.x - b.x) });
+        }
       });
     }
+    // Sort rows top-to-bottom (higher Y = higher on page in PDF coords)
+    allRows.sort((a, b) => b.y - a.y);
 
-    parseBreakSchedule(fullText);
-
+    parseBreakSchedule(allRows);
   } catch(err) {
     console.error(err);
     document.getElementById('breaks-loading').style.display = 'none';
@@ -1412,110 +1399,89 @@ async function handleBreaksPDF(file) {
   }
 }
 
-function parseBreakSchedule(text) {
+function parseBreakSchedule(allRows) {
   breakSchedule = {};
   breakDays = [];
 
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const dayRe = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*(\d{1,2})$/i;
+  const timeRe = /^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/;
+  const skipRe = /^(page:|schedule report|week schedule|store:|\d{2}\/\d{2}\/\d{4})/i;
 
-  // Collect all unique day tokens across all lines
-  const dayRe = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d{1,2})/gi;
-  const seenDays = new Set();
-  lines.forEach(line => {
-    let m;
-    dayRe.lastIndex = 0;
-    while ((m = dayRe.exec(line)) !== null) {
-      const label = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' ' + parseInt(m[2]);
-      seenDays.add(label);
-    }
-  });
-
-  // Sort days by date number
-  breakDays = [...seenDays].sort((a, b) => parseInt(a.split(' ')[1]) - parseInt(b.split(' ')[1]));
-  breakDays.forEach(d => { breakSchedule[d] = []; });
-
-  if (breakDays.length === 0) {
-    document.getElementById('breaks-loading').style.display = 'none';
-    document.getElementById('breaks-upload-area').style.display = 'block';
-    document.getElementById('breaks-list').innerHTML = '<div class="empty-state">Could not find schedule days in this PDF.</div>';
-    return;
-  }
-
-  // Parse employee lines — each line: [optional day token] Name HH:MM - HH:MM ...
-  const skipRe = /^(page:|schedule report|week schedule|\d{2}\/\d{2}\/\d{4})/i;
-  const timeRangeRe = /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/g;
-
-  // Build a map of {name: [{start,end,dayLabel}]} using position-aware parsing
-  // pdf.js gives us x positions — use them to assign times to day columns
-  // We need to reparse with position data, so re-extract from PDF items directly.
-  // For now use the text-based approach with the structured weekly format.
-
-  // The weekly PDF format is clean: each row has Name + times in day order
-  // with blank cells for days not worked. Since pdf.js text extraction
-  // preserves relative positions via our row grouping, times appear in
-  // left-to-right day order. We need the X positions of day headers
-  // to correctly bin each time to a day.
-
-  // Find header row — contains all the day tokens
-  let headerRow = null;
-  let dayXPositions = []; // [{label, x}]
-
-  // We'll re-read the PDF with position data
-  // Since we already have fullText grouped by rows, let's use a smarter approach:
-  // Find lines that contain ONLY day tokens and times, vs lines with names
-
-  // Simpler: use the known week format. The text extracted row by row
-  // will have the header row with day labels at known X positions.
-  // Times in data rows appear at X positions matching their day column.
-
-  // Since we have row-grouped text but lost X positions after joining,
-  // let's use a count-based approach with the clean weekly PDF format:
-  // Each employee works a known subset of days. Times appear in L→R order.
-  // We assign by matching the number of times to days using the schedule pattern.
-
-  // Actually with pdf.js row grouping, each row item HAS an x coordinate.
-  // We stored them above but lost them when joining. Let's use the raw line
-  // parsing with position inference from the known 7-day grid.
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (skipRe.test(line)) continue;
-
-    // Strip leading day token if present
-    const cleanLine = line.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{1,2}\s+/i, '').trim();
-
-    const firstTime = cleanLine.search(/\d{1,2}:\d{2}/);
-    if (firstTime < 2) continue;
-
-    const name = cleanLine.slice(0, firstTime).trim();
-    if (!name || name.length < 2 || /^\d/.test(name)) continue;
-    // Skip lines that are just day headers
-    if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/i.test(name)) continue;
-
-    const times = [];
-    timeRangeRe.lastIndex = 0;
-    let m;
-    while ((m = timeRangeRe.exec(cleanLine)) !== null) {
-      times.push({ start: m[1], end: m[2] });
-    }
-    if (times.length === 0) continue;
-
-    // Assign times to days left-to-right (sequential days the person works)
-    // This correctly handles the weekly format since times are in day order
-    let dayIdx = 0;
-    times.forEach(t => {
-      while (dayIdx < breakDays.length) {
-        // Skip days already assigned to this person
-        const day = breakDays[dayIdx];
-        dayIdx++;
-        // Check not already assigned
-        if (!breakSchedule[day].find(e => e.name === name)) {
-          breakSchedule[day].push({ name, start: t.start, end: t.end, startMins: timeToMins(t.start) });
-          break;
+  // Step 1: find the header row(s) containing day labels (Mon 11, Tue 12 etc)
+  // Day labels may be split across 2 rows in the PDF
+  let dayColumns = []; // [{label, x}]
+  allRows.forEach(row => {
+    row.items.forEach(item => {
+      const m = item.text.match(dayRe);
+      if (m) {
+        const label = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' ' + parseInt(m[2]);
+        if (!dayColumns.find(d => d.label === label)) {
+          dayColumns.push({ label, x: item.x });
         }
       }
     });
+  });
+
+  if (dayColumns.length === 0) {
+    document.getElementById('breaks-loading').style.display = 'none';
+    document.getElementById('breaks-upload-area').style.display = 'block';
+    document.getElementById('breaks-list').innerHTML = '<div class="empty-state">Could not find day headers in this PDF.</div>';
+    return;
   }
+
+  // Sort day columns by X position (left to right)
+  dayColumns.sort((a, b) => a.x - b.x);
+  breakDays = dayColumns.map(d => d.label);
+  breakDays.forEach(d => { breakSchedule[d] = []; });
+
+  // Step 2: for each data row, find name (leftmost text) + time ranges
+  // Assign each time range to the day column whose X is closest
+  allRows.forEach(row => {
+    const texts = row.items.filter(i => i.text.length > 0);
+    if (texts.length === 0) return;
+
+    // Skip header/footer rows
+    const rowText = texts.map(i => i.text).join(' ');
+    if (skipRe.test(rowText)) return;
+    if (texts.every(i => dayRe.test(i.text))) return; // pure header row
+
+    // Find time ranges in this row
+    const timePairs = [];
+    // Look for adjacent items forming "HH:MM - HH:MM" or single items with full range
+    for (let i = 0; i < texts.length; i++) {
+      const full = texts[i].text + (texts[i+1] ? ' ' + texts[i+1].text : '') + (texts[i+2] ? ' ' + texts[i+2].text : '');
+      const m = full.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+      if (m) {
+        timePairs.push({ start: m[1], end: m[2], x: texts[i].x });
+        i += 2; // skip the consumed items
+        continue;
+      }
+      // Single item with full range
+      const m2 = texts[i].text.match(timeRe);
+      if (m2) {
+        timePairs.push({ start: m2[1], end: m2[2], x: texts[i].x });
+      }
+    }
+
+    if (timePairs.length === 0) return;
+
+    // Name = leftmost non-time, non-day text item
+    const nameItems = texts.filter(i => !timeRe.test(i.text) && !dayRe.test(i.text) && !/^-$/.test(i.text) && !/^\d{1,2}$/.test(i.text));
+    if (nameItems.length === 0) return;
+    const name = nameItems.map(i => i.text).join(' ').trim();
+    if (!name || name.length < 2) return;
+
+    // Assign each time pair to nearest day column by X position
+    timePairs.forEach(tp => {
+      let nearest = dayColumns[0];
+      let minDist = Math.abs(tp.x - dayColumns[0].x);
+      dayColumns.forEach(dc => {
+        const dist = Math.abs(tp.x - dc.x);
+        if (dist < minDist) { minDist = dist; nearest = dc; }
+      });
+      breakSchedule[nearest.label].push({ name, start: tp.start, end: tp.end, startMins: timeToMins(tp.start) });
+    });
+  });
 
   // Sort each day by start time
   breakDays.forEach(day => {
@@ -1532,7 +1498,7 @@ function parseBreakSchedule(text) {
 
   document.getElementById('breaks-loading').style.display = 'none';
   document.getElementById('breaks-upload-area').style.display = 'block';
-  document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">✓ Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+  document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
   renderBreakDaySelector();
   renderBreakSheet();
   document.getElementById('breaks-day-selector').style.display = 'block';
@@ -1542,19 +1508,14 @@ function resetBreaksUpload() {
   breakSchedule = {};
   breakDays = [];
   selectedBreakDay = null;
-  document.getElementById('breaks-upload-area').innerHTML = \`
-    <div style="font-size:36px;margin-bottom:8px">📄</div>
-    <div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Drop PDF here or tap to upload</div>
-    <div style="font-size:13px;color:#888">Weekly schedule PDF from your scheduling system</div>
-    <input type="file" id="breaks-file-input" accept=".pdf" style="display:none" onchange="handleBreaksPDF(this.files[0])">\`;
-  document.getElementById('breaks-upload-area').onclick = () => document.getElementById('breaks-file-input').click();
+  const area = document.getElementById('breaks-upload-area');
+  area.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📄</div>' +
+    '<div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Drop PDF here or tap to upload</div>' +
+    '<div style="font-size:13px;color:#888">Weekly schedule PDF from your scheduling system</div>' +
+    '<input type="file" id="breaks-file-input" accept=".pdf" style="display:none" onchange="handleBreaksPDF(this.files[0])">';
+  area.onclick = () => document.getElementById('breaks-file-input').click();
   document.getElementById('breaks-day-selector').style.display = 'none';
   document.getElementById('breaks-list').innerHTML = '';
-}
-
-(t) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
 }
 
 function timeToMins(t) {
