@@ -316,6 +316,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div id="breaks-day-selector" style="display:none;overflow-x:auto;white-space:nowrap;padding:10px 12px;background:#fff;border-bottom:1px solid #e5e5e0;scrollbar-width:none"></div>
 
       <div id="breaks-list"></div>
+
+      <div style="margin:12px">
+        <button onclick="testBreakSheetPush()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;color:#888;cursor:pointer;font-family:inherit">🧪 Test — push break sheet to Google Sheets now</button>
+        <div id="breaks-push-status" style="font-size:12px;text-align:center;margin-top:6px;color:#888"></div>
+      </div>
+
       <div class="bottom-pad"></div>
     </div>
 
@@ -1650,35 +1656,19 @@ function renderBreakSheet() {
     const netHours = (shiftMins - breakMins) / 60;
     const netDisplay = netHours.toFixed(2) + 'h';
 
-    // Build break boxes — always 2 slots, blank spacer if only 1 break
-    // Slot 1 = main break (45, 30, or 15 if only one)
-    // Slot 2 = secondary 15 min break (or empty spacer)
-    let slot1Html = '', slot2Html = '';
-    if (breaks.length === 0) {
-      slot1Html = '<div class="break-box-spacer"></div>';
-      slot2Html = '<div class="break-box-spacer"></div>';
-    } else if (breaks.length === 1) {
-      const b = breaks[0];
-      const checked = breakChecked[key]?.[b] || false;
-      slot1Html = `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
-        <span class="break-box-label">${b}</span>
-        <div class="break-checkbox${checked?' checked':''}"></div>
-      </div>`;
-      slot2Html = '<div class="break-box-spacer"></div>';
-    } else {
-      breaks.forEach((b, idx) => {
-        const checked = breakChecked[key]?.[b] || false;
-        const boxHtml = `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
-          <span class="break-box-label">${b}</span>
-          <div class="break-checkbox${checked?' checked':''}"></div>
-        </div>`;
-        if (idx === 0) slot1Html = boxHtml;
-        else slot2Html = boxHtml;
-      });
-    }
-
     const note = breakChecked[key]?.note || '';
     const safeNote = note.replace(/'/g, "\\'");
+
+    const breakBoxesHtml = breaks.length === 0
+      ? '<span style="font-size:12px;color:#ccc">No break</span>'
+      : breaks.map(b => {
+          const checked = breakChecked[key]?.[b] || false;
+          return `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
+            <span class="break-box-label">${b}</span>
+            <div class="break-checkbox${checked?' checked':''}"></div>
+          </div>`;
+        }).join('');
+
     const noteHtml = breakChecked[key]?.showNote
       ? `<div style="display:flex;gap:6px;padding:6px 1rem 10px;background:#fff;border-bottom:1px solid #f0f0ec">
           <input type="text" value="${note}" placeholder="Add a note..." onchange="saveBreakNote('${safeName}','${safeDay}',this.value)" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
@@ -1692,8 +1682,7 @@ function renderBreakSheet() {
         <div class="break-time">${person.start} – ${person.end} <span style="color:#bbb;font-size:11px">(${netDisplay} net)</span></div>
       </div>
       <div class="break-boxes">
-        ${slot1Html}
-        ${slot2Html}
+        ${breakBoxesHtml}
         <div class="break-box" onclick="toggleBreakNote('${safeName}','${safeDay}')" title="Add note">
           <span class="break-box-label">note</span>
           <div style="width:28px;height:28px;border-radius:6px;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:14px">${note ? '📝' : '+'}</div>
@@ -1784,7 +1773,19 @@ function hasUntickedBreaks() {
   });
 }
 
-function pushBreakSheetToSheets() {
+function testBreakSheetPush() {
+  const status = document.getElementById('breaks-push-status');
+  if (!selectedBreakDay || !breakSchedule[selectedBreakDay] || breakSchedule[selectedBreakDay].length === 0) {
+    status.textContent = '⚠ No schedule loaded — upload a PDF first.';
+    status.style.color = '#d4000a';
+    return;
+  }
+  status.textContent = 'Pushing to Google Sheets...';
+  status.style.color = '#888';
+  pushBreakSheetToSheets(true);
+}
+
+function pushBreakSheetToSheets(isTest = false) {
   const day = selectedBreakDay;
   if (!day || !breakSchedule[day] || breakSchedule[day].length === 0) return;
 
@@ -1809,8 +1810,30 @@ function pushBreakSheetToSheets() {
   });
   fetch(SHEETS_URL + '?' + params.toString())
     .then(r => r.json())
-    .then(data => { if (!data.success) console.error('Break sheet push failed:', data.error); })
-    .catch(err => console.error('Break sheet push error:', err));
+    .then(data => {
+      if (data.success) {
+        if (isTest) {
+          const status = document.getElementById('breaks-push-status');
+          status.textContent = '✓ Successfully pushed to Google Sheets!';
+          status.style.color = '#1D9E75';
+        }
+      } else {
+        console.error('Break sheet push failed:', data.error);
+        if (isTest) {
+          const status = document.getElementById('breaks-push-status');
+          status.textContent = '⚠ Push failed: ' + data.error;
+          status.style.color = '#d4000a';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Break sheet push error:', err);
+      if (isTest) {
+        const status = document.getElementById('breaks-push-status');
+        status.textContent = '⚠ Could not reach Google Sheets.';
+        status.style.color = '#d4000a';
+      }
+    });
 }
 
 function cleanupOldData() {
