@@ -1488,13 +1488,21 @@ function parseBreakSchedule(allRows) {
     breakSchedule[day].sort((a, b) => a.startMins - b.startMins);
   });
 
-  // Auto-select today
+  // AUTO-SELECT TODAY
   const now = new Date();
   const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
   const todayNum = now.getDate();
   selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
     || breakDays.find(d => d.startsWith(todayShort))
     || breakDays[0];
+
+  // DEBUG — log what was parsed so we can diagnose
+  console.log('=== BREAK SHEET DEBUG ===');
+  console.log('Days found:', breakDays);
+  console.log('Day columns (x positions):', dayColumns.map(d => d.label + ' @ x=' + d.x));
+  breakDays.forEach(day => {
+    console.log(day + ':', breakSchedule[day].map(s => s.name + ' ' + s.start + '-' + s.end));
+  });
 
   document.getElementById('breaks-loading').style.display = 'none';
   document.getElementById('breaks-upload-area').style.display = 'block';
