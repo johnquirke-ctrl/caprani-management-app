@@ -2557,7 +2557,7 @@ function saveBreakNote(name, day, value) {
 
 // ─── BREAK SHEET ALERTS & NIGHTLY PUSH ──────────────────────────────
 let breakMidnightAlerted = false;
-let breakSheetPushed = false;
+let nightlyPushed = false;
 
 function checkBreakSheetAlerts() {
   if (!currentManager) return;
@@ -2573,18 +2573,20 @@ function checkBreakSheetAlerts() {
     }
   }
 
-  // 2am push to Google Sheets then remove the day
-  if (h === 2 && min === 0 && !breakSheetPushed) {
-    breakSheetPushed = true;
+  // 2am push — break sheet, shift checklists and to-do list
+  if (h === 2 && min === 0 && !nightlyPushed) {
+    nightlyPushed = true;
     pushBreakSheetToSheets();
+    pushShiftDataToSheets();
+    pushTodoToSheets();
     removePastBreakDays();
   }
 
-  // Also remove past days on load/check (catches days already past 2am)
+  // Also remove past days on load/check
   removePastBreakDays();
 
   // Reset flags after 3am
-  if (h === 3) { breakMidnightAlerted = false; breakSheetPushed = false; }
+  if (h === 3) { breakMidnightAlerted = false; nightlyPushed = false; }
 }
 
 function removePastBreakDays() {
@@ -2717,6 +2719,68 @@ function pushBreakSheetToSheets(isTest = false) {
         status.style.color = '#d4000a';
       }
     });
+}
+
+function pushShiftDataToSheets() {
+  const s = getState();
+  const shiftTypes = ['open', 'day', 'close'];
+  const rows = [];
+
+  shiftTypes.forEach(type => {
+    const key = todayKey() + '_' + type;
+    const checked  = new Set((s.shiftChecked  && s.shiftChecked[key])  || []);
+    const priorities = (s.shiftPriorities && s.shiftPriorities[key]) || {};
+    const notes      = (s.shiftNotes      && s.shiftNotes[key])      || {};
+
+    // Only push if this shift type had any activity
+    if (checked.size === 0 && Object.keys(priorities).length === 0) return;
+
+    SHIFT_TASKS.forEach(t => {
+      const isDone = checked.has(t.name);
+      const pri    = priorities[t.name] || '';
+      const note   = notes[t.name] || '';
+      const status = isDone ? 'Done' : pri ? 'Flagged – ' + pri.toUpperCase() : 'Not actioned';
+      rows.push([todayKey(), type.charAt(0).toUpperCase()+type.slice(1), t.area, t.name, status, pri.toUpperCase(), note]);
+    });
+  });
+
+  if (rows.length === 0) return;
+
+  const params = new URLSearchParams({
+    action: 'shift',
+    date: todayKey(),
+    rows: JSON.stringify(rows)
+  });
+  fetch(SHEETS_URL + '?' + params.toString())
+    .catch(err => console.error('Shift push error:', err));
+}
+
+function pushTodoToSheets() {
+  const s = getState();
+  const todo = (s.todoList || []).filter(t => t.addedDate === todayKey());
+  if (todo.length === 0) return;
+
+  const rows = todo.map(t => [
+    todayKey(),
+    t.shiftType ? t.shiftType.charAt(0).toUpperCase()+t.shiftType.slice(1) : '',
+    t.area || '',
+    t.name,
+    t.priority ? t.priority.toUpperCase() : '',
+    t.note || '',
+    t.addedBy || '',
+    t.addedAt || '',
+    t.done ? 'Done' : 'Outstanding',
+    t.doneBy || '',
+    t.doneAt || ''
+  ]);
+
+  const params = new URLSearchParams({
+    action: 'todo',
+    date: todayKey(),
+    rows: JSON.stringify(rows)
+  });
+  fetch(SHEETS_URL + '?' + params.toString())
+    .catch(err => console.error('Todo push error:', err));
 }
 
 function cleanupOldData() {
