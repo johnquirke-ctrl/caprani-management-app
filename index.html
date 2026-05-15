@@ -369,78 +369,122 @@ const SHIFT_TASKS = [
   {area:"General", name:"Check staff appearance (sock check, snood, hair net etc)"},
 ];
 
+// freq: daily|twice-weekly|weekly|fortnightly|monthly|quarterly|annually|every-2-months|other
+// days: array of JS day numbers (0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat)
+// week: 'odd'|'even'|null (for fortnightly)
+// monthDay: number (day of month) or 'Nth_dow' string
+// seasonal: null = all year, or {startMonth:0-11, endMonth:0-11}
 const CLEANING_TASKS = [
-  {area:"Exterior",name:"Sweep stones",desc:"",freq:"daily"},
-  {area:"Exterior",name:"Trash walk (roundabout to Woodies)",desc:"Pick up all litter, not just McDs",freq:"daily"},
-  {area:"Exterior",name:"DT height restrictor",desc:"Detail clean",freq:"weekly"},
-  {area:"Exterior",name:"Back corral door",desc:"Detail clean",freq:"weekly"},
-  {area:"Exterior",name:"Bin storage area",desc:"Detail clean",freq:"weekly"},
-  {area:"Exterior",name:"Sweep up all leaves/branches",desc:"",freq:"weekly"},
-  {area:"Exterior",name:"Deck scrub entrance",desc:"Degrease grease trail with hot water and degreaser",freq:"fortnightly"},
-  {area:"Exterior",name:"DT screens and frame (inc at Booth 1)",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Exterior",name:"External advertising (Coffee/Promo/DT)",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Exterior",name:"External windows",desc:"Detail clean (DT booths and Dining Area, including sills)",freq:"fortnightly"},
-  {area:"Exterior",name:"Clean ashtray",desc:"Replace sand",freq:"fortnightly"},
-  {area:"Exterior",name:"Disabled/pull forward signs",desc:"Detail clean",freq:"monthly"},
-  {area:"Exterior",name:"DT speaker",desc:"Detail clean",freq:"monthly"},
-  {area:"Exterior",name:"DT canopy",desc:"Detail clean (quarterly)",freq:"other"},
-  {area:"Exterior",name:"Cut grass and strim edges",desc:"Including strip beyond fence",freq:"other"},
-  {area:"Exterior",name:"Large bins",desc:"Detail clean",freq:"other"},
-  {area:"Exterior",name:"McDonald's roof signage",desc:"Detail clean",freq:"other"},
-  {area:"Exterior",name:"Exterior of ops shed, freezer and chiller",desc:"Detail clean",freq:"other"},
-  {area:"Dining Area",name:"Baseboards, doors and frames",desc:"Detail clean (inc toilet corridor)",freq:"weekly"},
-  {area:"Dining Area",name:"Wash windows internally",desc:"Including porch",freq:"weekly"},
-  {area:"Dining Area",name:"Condiment cabinet",desc:"Stainless holders, cabinet, ketchup nozzles detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"Bin",desc:"Detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"Return box",desc:"Detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"Tent cards",desc:"Wipe down/sanitize",freq:"weekly"},
-  {area:"Dining Area",name:"Kiosk screens, frames and bases",desc:"Detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"High chairs",desc:"Detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"Door stainless bases and handles",desc:"Detail clean",freq:"weekly"},
-  {area:"Dining Area",name:"Deck scrub DA floor",desc:"Inc grey lines degreased",freq:"weekly"},
-  {area:"Dining Area",name:"Bench tops and legs",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Dining Area",name:"Grate at entrance",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Dining Area",name:"Stool tops and bases",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Dining Area",name:"DA lighting and vents (inc Toilets/Corridor)",desc:"Dust",freq:"fortnightly"},
-  {area:"Dining Area",name:"Crispy fries sign",desc:"Detail clean (and surrounding wall)",freq:"fortnightly"},
-  {area:"Dining Area",name:"Screens, frames and sills",desc:"CCTV, DMB, ORB, Digit Advertising",freq:"monthly"},
-  {area:"Dining Area",name:"Entrance mat",desc:"Wash and swap",freq:"monthly"},
-  {area:"Dining Area",name:"Wet floor signs",desc:"Detail clean",freq:"other"},
-  {area:"Customer and Crew Toilets",name:"Toilet walls (inc under hand dryer)",desc:"Detail clean",freq:"weekly"},
-  {area:"Customer and Crew Toilets",name:"Toilet, brush, sink and baby changing",desc:"Detail clean",freq:"weekly"},
-  {area:"Customer and Crew Toilets",name:"Deck scrub toilet floors",desc:"Detail clean",freq:"weekly"},
-  {area:"Customer and Crew Toilets",name:"Toilet corridor frames/baseboards/walls",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Crew Room",name:"Tidy storage stools, lockers (above), top press and fridge",desc:"",freq:"weekly"},
-  {area:"Crew Room",name:"Fix any popped off locker hinges",desc:"",freq:"weekly"},
-  {area:"Crew Room",name:"Clean fridge and microwave",desc:"Detail clean",freq:"weekly"},
-  {area:"Crew Room",name:"Clean crew room tables, chairs and stools",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Crew Room",name:"Crew room walls, base boards, door handles and steel kickboards",desc:"Detail clean",freq:"fortnightly"},
-  {area:"Crew Room",name:"Clean front of lockers",desc:"",freq:"monthly"},
-  {area:"Corral and Shed",name:"Detail clean back yard after delivery",desc:"",freq:"weekly"},
-  {area:"Corral and Shed",name:"Clean and re-organise ops shed after delivery",desc:"",freq:"weekly"},
-  {area:"Corral and Shed",name:"Clean glass above back door",desc:"",freq:"fortnightly"},
-  {area:"Corral and Shed",name:"Clean back corral wall, compactor, OSCAR and elephant",desc:"",freq:"monthly"},
-  {area:"Back Room",name:"Wipe down corridor doors, handles and kickboards",desc:"",freq:"weekly"},
-  {area:"Back Room",name:"Deck scrub back corridors after delivery",desc:"",freq:"weekly"},
-  {area:"Back Room",name:"Dry stock deck scrub",desc:"",freq:"weekly"},
-  {area:"Back Room",name:"De-ice freezer",desc:"",freq:"weekly"},
-  {area:"Back Room",name:"Wipe down ladder and defib box",desc:"",freq:"monthly"},
-  {area:"Back Room",name:"Dry stock walls and baseboards",desc:"",freq:"monthly"},
-  {area:"Back Room",name:"Clean mop buckets/handles, brush and dustpans",desc:"",freq:"fortnightly"},
-  {area:"Back Room",name:"Clean chiller/freezer walls, bareboards, shelves and shake trolley",desc:"",freq:"monthly"},
-  {area:"Back Room",name:"Dry stock multiplex, salt container and wraps container",desc:"",freq:"monthly"},
-  {area:"Back Room",name:"Wash hi-vis uniforms",desc:"",freq:"other"},
-  {area:"Back Room",name:"Deep clean freezer matting",desc:"",freq:"other"},
-  {area:"Back Sink",name:"Behind washing machine (inc plinth)/dishwasher",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"All skirting boards and pipes under sink",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Under sink/greaseshield including walls/boards",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Clean Hobart salt unit",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Wipe down Ecolab fly killing units",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Cloth trolley base and inserts",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Red buckets under sink",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"Small sink",desc:"",freq:"fortnightly"},
-  {area:"Back Sink",name:"GreaseShield unit",desc:"",freq:"fortnightly"},
+  // ── EXTERIOR ──────────────────────────────────────────────────────
+  {area:"Exterior",name:"Deweed curbs and patio",desc:"Use butterknife and weed killer",freq:"monthly",monthDay:1,days:[0,1,2,3,4,5,6]},
+  {area:"Exterior",name:"Deck scrub entrance",desc:"Degrease grease trail at entrance with hot water and degreaser",freq:"fortnightly",week:"odd",days:[1]},
+  {area:"Exterior",name:"Disabled/pull forward signs",desc:"Detail clean",freq:"monthly",monthDay:8,days:[0,1,2,3,4,5,6]},
+  {area:"Exterior",name:"DT canopy",desc:"Detail clean",freq:"quarterly",days:[5]},
+  {area:"Exterior",name:"DT speaker",desc:"Detail clean",freq:"monthly",monthDay:15,days:[0,1,2,3,4,5,6]},
+  {area:"Exterior",name:"Cut grass and strim edges",desc:"Including strip beyond fence",freq:"fortnightly",week:"even",days:[0],seasonal:{startMonth:3,endMonth:8}},
+  {area:"Exterior",name:"Sweep stones",desc:"",freq:"twice-weekly",days:[1,5]},
+  {area:"Exterior",name:"Clean ashtray",desc:"Replace sand",freq:"monthly",monthDay:22,days:[0,1,2,3,4,5,6]},
+  {area:"Exterior",name:"Sweep up all leaves/branches",desc:"",freq:"weekly",days:[0],seasonal:{startMonth:8,endMonth:10}},
+  {area:"Exterior",name:"DT height restrictor",desc:"Detail clean",freq:"weekly",days:[0]},
+  {area:"Exterior",name:"Back corral door",desc:"Detail clean",freq:"weekly",days:[0]},
+  {area:"Exterior",name:"Bin storage area",desc:"Detail clean",freq:"weekly",days:[3]},
+  {area:"Exterior",name:"DT screens and frame (inc at Booth 1)",desc:"Detail clean",freq:"monthly",monthDay:29,days:[0,1,2,3,4,5,6]},
+  {area:"Exterior",name:"External advertising (Coffee/Promo/DT)",desc:"Detail clean",freq:"fortnightly",week:"odd",days:[6]},
+  {area:"Exterior",name:"External windows",desc:"Detail clean (DT booths and Dining Area, including sills)",freq:"fortnightly",week:"even",days:[6]},
+  {area:"Exterior",name:"McDonald's roof signage",desc:"Detail clean",freq:"annually",monthDay:1,month:5},
+  {area:"Exterior",name:"Exterior of ops shed, freezer and chiller",desc:"Detail clean",freq:"annually",monthDay:1,month:5},
+  {area:"Exterior",name:"Large bins",desc:"Detail clean",freq:"every-2-months",days:[6]},
+  {area:"Exterior",name:"Trash walk (roundabout to Woodies)",desc:"Pick up all litter, not just McDs",freq:"twice-weekly",days:[5,6]},
+  // ── DINING AREA ───────────────────────────────────────────────────
+  {area:"Dining Area",name:"Baseboards, doors and frames",desc:"Detail clean (inc toilet corridor)",freq:"weekly",days:[1]},
+  {area:"Dining Area",name:"Bench tops and legs",desc:"Detail clean",freq:"fortnightly",week:"odd",days:[1]},
 ];
+
+// ─── SCHEDULING HELPERS ──────────────────────────────────────────────
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getNthWeekdayOfMonth(year, month, dayOfWeek, n) {
+  let count = 0;
+  let d = new Date(year, month, 1);
+  while (d.getMonth() === month) {
+    if (d.getDay() === dayOfWeek) {
+      count++;
+      if (count === n) return d;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return null;
+}
+
+function isInSeason(task, date) {
+  if (!task.seasonal) return true;
+  const m = date.getMonth();
+  const {startMonth, endMonth} = task.seasonal;
+  if (startMonth <= endMonth) return m >= startMonth && m <= endMonth;
+  return m >= startMonth || m <= endMonth; // wraps year e.g. Nov–Feb
+}
+
+function isTaskDueOn(task, date) {
+  if (!isInSeason(task, date)) return false;
+
+  const dow   = date.getDay();
+  const dom   = date.getDate();
+  const month = date.getMonth();
+  const year  = date.getFullYear();
+  const isoWeek  = getISOWeek(date);
+  const isOddWeek  = isoWeek % 2 !== 0;
+  const isEvenWeek = !isOddWeek;
+
+  switch(task.freq) {
+    case 'daily':
+      return true;
+
+    case 'twice-weekly':
+    case 'weekly':
+      return task.days.includes(dow);
+
+    case 'fortnightly': {
+      if (!task.days.includes(dow)) return false;
+      if (task.week === 'odd')  return isOddWeek;
+      if (task.week === 'even') return isEvenWeek;
+      return true;
+    }
+
+    case 'monthly': {
+      if (typeof task.monthDay === 'number') return dom === task.monthDay;
+      if (typeof task.monthDay === 'string') {
+        const parts = task.monthDay.split('_');
+        const nMap  = {'1st':1,'2nd':2,'3rd':3,'4th':4};
+        const dowMap = {'sun':0,'mon':1,'tue':2,'wed':3,'thu':4,'fri':5,'sat':6};
+        const nthDay = getNthWeekdayOfMonth(year, month, dowMap[parts[1]], nMap[parts[0]]);
+        return nthDay && nthDay.getDate() === dom;
+      }
+      return false;
+    }
+
+    case 'quarterly':
+      // Show on the designated day in Jan, Apr, Jul, Oct
+      return [0,3,6,9].includes(month) && task.days.includes(dow);
+
+    case 'every-2-months':
+      // Show on designated day in Jan, Mar, May, Jul, Sep, Nov
+      return [0,2,4,6,8,10].includes(month) && task.days.includes(dow);
+
+    case 'annually':
+      return month === task.month && dom === task.monthDay;
+
+    case 'other':
+      return true;
+
+    default:
+      return false;
+  }
+}
 
 // ─── STATE ──────────────────────────────────────────────────────────
 let currentManager = null;
@@ -851,36 +895,103 @@ const freqLabel = f => ({daily:'Daily',weekly:'Weekly',fortnightly:'Fortnightly'
 const freqColors = {daily:'background:#EAF3DE;color:#3B6D11',weekly:'background:#E6F1FB;color:#185FA5',fortnightly:'background:#EEEDFE;color:#534AB7',monthly:'background:#FAEEDA;color:#854F0B',other:'background:#f0f0ec;color:#555'};
 
 function renderCleaning() {
+  const today = new Date();
   const checked = getCleaningChecked();
-  const filtered = cleaningFilter==='all' ? CLEANING_TASKS : CLEANING_TASKS.filter(t=>t.area===cleaningFilter);
-  const areas = [...new Set(filtered.map(t=>t.area))];
+  const s = getState();
+
+  // Build set of tasks completed on previous days (to detect overdue)
+  const prevChecked = new Set();
+  if (s.cleaningChecked) {
+    Object.entries(s.cleaningChecked).forEach(([dateKey, keys]) => {
+      if (dateKey !== todayKey()) keys.forEach(k => prevChecked.add(k));
+    });
+  }
+
+  // Filter tasks due today
+  const dueTodayTasks = CLEANING_TASKS.filter(t => isTaskDueOn(t, today));
+
+  // Find overdue tasks: due on a day in the past 7 days, not completed that day, and not completed today
+  const overdueTasks = [];
+  for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
+    const pastDate = new Date(today);
+    pastDate.setDate(today.getDate() - daysAgo);
+    const pastKey = pastDate.toISOString().slice(0,10);
+    const pastChecked = new Set((s.cleaningChecked && s.cleaningChecked[pastKey]) || []);
+    CLEANING_TASKS.forEach(t => {
+      if (isTaskDueOn(t, pastDate)) {
+        const key = t.area+'|'+t.name;
+        // Not completed that day, not already in overdue list, and not ticked off today
+        if (!pastChecked.has(key) && !overdueTasks.find(o=>o.key===key) && !checked.has(key)) {
+          overdueTasks.push({...t, key, daysAgo});
+        }
+      }
+    });
+  }
+
+  // Apply area filter
+  const filterArea = cleaningFilter === 'all' ? null : cleaningFilter;
+  const filteredToday = filterArea ? dueTodayTasks.filter(t=>t.area===filterArea) : dueTodayTasks;
+  const filteredOverdue = filterArea ? overdueTasks.filter(t=>t.area===filterArea) : overdueTasks;
+
   let html = '';
-  areas.forEach(area => {
-    const items = filtered.filter(t=>t.area===area);
-    const done  = items.filter(t=>checked.has(t.area+'|'+t.name)).length;
-    html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
-    items.forEach(t => {
-      const key = t.area+'|'+t.name;
-      const isDone = checked.has(key);
-      const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+  // Overdue section — only shows uncompleted tasks (completed ones are fully hidden)
+  if (filteredOverdue.length > 0) {
+    html += `<div class="section-header" style="background:#FCEBEB;color:#A32D2D"><span>⚠ Overdue</span><span>${filteredOverdue.length} remaining</span></div>`;
+    filteredOverdue.forEach(t => {
+      const safeKey = t.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const safeArea = t.area.replace(/'/g,"\\'");
       const safeName = t.name.replace(/'/g,"\\'");
-      html += `<div class="task-row${isDone?' done':''}" onclick="toggleCleaningTask('${safeKey}','${safeArea}','${safeName}','${t.freq}')">
-        <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
+      const daysAgoLabel = t.daysAgo === 1 ? 'yesterday' : `${t.daysAgo} days ago`;
+      html += `<div class="task-row" onclick="toggleCleaningTask('${safeKey}','${safeArea}','${safeName}','${t.freq}')" style="border-left:3px solid #E24B4A">
+        <div class="checkbox"></div>
         <div>
           <div class="task-name">${t.name}</div>
+          <div class="task-meta" style="color:#A32D2D">Due ${daysAgoLabel} · ${t.area}</div>
           ${t.desc?`<div class="task-meta">${t.desc}</div>`:''}
         </div>
         <span class="badge" style="${freqColors[t.freq]||freqColors.other};padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap;flex-shrink:0;margin-top:2px">${freqLabel(t.freq)}</span>
       </div>`;
     });
-  });
-  document.getElementById('cleaning-task-list').innerHTML = html;
-  const total = filtered.length;
-  const done  = filtered.filter(t=>checked.has(t.area+'|'+t.name)).length;
-  const pct   = total ? Math.round(done/total*100) : 0;
+  }
+
+  // Today's tasks by area
+  const areas = [...new Set(filteredToday.map(t=>t.area))];
+  if (filteredToday.length === 0 && filteredOverdue.length === 0) {
+    html += '<div class="empty-state">No cleaning tasks due today</div>';
+  } else {
+    areas.forEach(area => {
+      const items = filteredToday.filter(t=>t.area===area);
+      const done = items.filter(t=>checked.has(t.area+'|'+t.name)).length;
+      html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
+      items.forEach(t => {
+        const key = t.area+'|'+t.name;
+        const isDone = checked.has(key);
+        const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const safeArea = t.area.replace(/'/g,"\\'");
+        const safeName = t.name.replace(/'/g,"\\'");
+        html += `<div class="task-row${isDone?' done':''}" onclick="toggleCleaningTask('${safeKey}','${safeArea}','${safeName}','${t.freq}')">
+          <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
+          <div>
+            <div class="task-name">${t.name}</div>
+            ${t.desc?`<div class="task-meta">${t.desc}</div>`:''}
+          </div>
+          <span class="badge" style="${freqColors[t.freq]||freqColors.other};padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap;flex-shrink:0;margin-top:2px">${freqLabel(t.freq)}</span>
+        </div>`;
+      });
+    });
+  }
+
+  const listEl = document.getElementById('cleaning-task-list');
+  const histOpen = listEl?.dataset.overdueHistOpen === 'true';
+  listEl.dataset.overdueHistOpen = histOpen ? 'true' : 'false';
+  listEl.innerHTML = html;
+
+  const totalToday = filteredToday.length;
+  const doneToday = filteredToday.filter(t=>checked.has(t.area+'|'+t.name)).length;
+  const pct = totalToday ? Math.round(doneToday/totalToday*100) : 0;
   document.getElementById('cleaning-prog').style.width = pct+'%';
-  document.getElementById('cleaning-prog-label').textContent = `${done} of ${total} tasks completed (${pct}%)`;
+  document.getElementById('cleaning-prog-label').textContent = `${doneToday} of ${totalToday} tasks completed today (${pct}%)`;
 }
 
 // ─── TOILET LOG ──────────────────────────────────────────────────────
@@ -1016,6 +1127,14 @@ function removeToiletCheck(slotLabel) {
   if (idx > -1) logs.splice(idx, 1);
   saveState(s);
   renderToilet();
+}
+
+function toggleOverdueHistory(headerEl) {
+  const body   = headerEl.nextElementSibling;
+  const chevron = headerEl.querySelector('.history-chevron');
+  const isOpen = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
+  document.getElementById('cleaning-task-list').dataset.overdueHistOpen = isOpen ? 'true' : 'false';
 }
 
 function toggleToiletHistory(headerEl) {
