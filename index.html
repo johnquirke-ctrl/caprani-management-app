@@ -797,18 +797,21 @@ function doLogin() {
 document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
-  // Clear this manager's active shift on logout
   const s = getState();
   if (s.activeShift && s.activeShift[currentManager]) {
     delete s.activeShift[currentManager];
-    saveState(s);
   }
-  currentManager = null;
-  currentShiftType = null;
   delete s.session;
   saveState(s);
+  sessionStorage.removeItem('nenaghOpsActive');
+  currentManager = null;
+  currentShiftType = null;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
+  document.getElementById('shift-content').style.display='none';
+  document.getElementById('shift-type-selector').style.display='block';
+  document.getElementById('change-shift-btn').style.display='none';
+  document.getElementById('shift-tag-label').textContent='';
   document.getElementById('pin-input').value='';
   document.getElementById('manager-select').value='';
 }
@@ -1062,34 +1065,38 @@ function renderTravelPathLog() {
   document.getElementById('travel-path-log').innerHTML = html;
 }
 
+function shiftKey() {
+  // Unique key per day + shift type
+  return todayKey() + '_' + (currentShiftType || 'unknown');
+}
+
 function getShiftChecked() {
   const s = getState();
-  return s.shiftChecked && s.shiftChecked[todayKey()] ? new Set(s.shiftChecked[todayKey()]) : new Set();
+  return s.shiftChecked && s.shiftChecked[shiftKey()] ? new Set(s.shiftChecked[shiftKey()]) : new Set();
 }
 
 function getShiftPriorities() {
   const s = getState();
-  return (s.shiftPriorities && s.shiftPriorities[todayKey()]) || {};
+  return (s.shiftPriorities && s.shiftPriorities[shiftKey()]) || {};
 }
 
 function getShiftNotes() {
   const s = getState();
-  return (s.shiftNotes && s.shiftNotes[todayKey()]) || {};
+  return (s.shiftNotes && s.shiftNotes[shiftKey()]) || {};
 }
 
 function toggleShiftTask(name) {
   const s = getState();
   if (!s.shiftChecked) s.shiftChecked = {};
-  if (!s.shiftChecked[todayKey()]) s.shiftChecked[todayKey()] = [];
-  const arr = s.shiftChecked[todayKey()];
+  if (!s.shiftChecked[shiftKey()]) s.shiftChecked[shiftKey()] = [];
+  const arr = s.shiftChecked[shiftKey()];
   const idx = arr.indexOf(name);
   if (idx > -1) {
     arr.splice(idx, 1);
   } else {
     arr.push(name);
-    // Clear any priority when ticked as done
-    if (s.shiftPriorities && s.shiftPriorities[todayKey()]) {
-      delete s.shiftPriorities[todayKey()][name];
+    if (s.shiftPriorities && s.shiftPriorities[shiftKey()]) {
+      delete s.shiftPriorities[shiftKey()][name];
     }
   }
   saveState(s);
@@ -1099,19 +1106,17 @@ function toggleShiftTask(name) {
 
 function setShiftTaskPriority(name, priority) {
   const s = getState();
-  // Untick if ticked
-  if (s.shiftChecked && s.shiftChecked[todayKey()]) {
-    const arr = s.shiftChecked[todayKey()];
+  if (s.shiftChecked && s.shiftChecked[shiftKey()]) {
+    const arr = s.shiftChecked[shiftKey()];
     const idx = arr.indexOf(name);
     if (idx > -1) arr.splice(idx, 1);
   }
   if (!s.shiftPriorities) s.shiftPriorities = {};
-  if (!s.shiftPriorities[todayKey()]) s.shiftPriorities[todayKey()] = {};
-  // Toggle off if same priority clicked again
-  if (s.shiftPriorities[todayKey()][name] === priority) {
-    delete s.shiftPriorities[todayKey()][name];
+  if (!s.shiftPriorities[shiftKey()]) s.shiftPriorities[shiftKey()] = {};
+  if (s.shiftPriorities[shiftKey()][name] === priority) {
+    delete s.shiftPriorities[shiftKey()][name];
   } else {
-    s.shiftPriorities[todayKey()][name] = priority;
+    s.shiftPriorities[shiftKey()][name] = priority;
   }
   saveState(s);
   renderShift();
@@ -1121,11 +1126,42 @@ function setShiftTaskPriority(name, priority) {
 function saveShiftTaskNote(name, note) {
   const s = getState();
   if (!s.shiftNotes) s.shiftNotes = {};
-  if (!s.shiftNotes[todayKey()]) s.shiftNotes[todayKey()] = {};
+  if (!s.shiftNotes[shiftKey()]) s.shiftNotes[shiftKey()] = {};
   if (note.trim()) {
-    s.shiftNotes[todayKey()][name] = note.trim();
+    s.shiftNotes[shiftKey()][name] = note.trim();
   } else {
-    delete s.shiftNotes[todayKey()][name];
+    delete s.shiftNotes[shiftKey()][name];
+  }
+  saveState(s);
+}
+
+function setShiftTaskPriority(name, priority) {
+  const s = getState();
+  if (s.shiftChecked && s.shiftChecked[shiftKey()]) {
+    const arr = s.shiftChecked[shiftKey()];
+    const idx = arr.indexOf(name);
+    if (idx > -1) arr.splice(idx, 1);
+  }
+  if (!s.shiftPriorities) s.shiftPriorities = {};
+  if (!s.shiftPriorities[shiftKey()]) s.shiftPriorities[shiftKey()] = {};
+  if (s.shiftPriorities[shiftKey()][name] === priority) {
+    delete s.shiftPriorities[shiftKey()][name];
+  } else {
+    s.shiftPriorities[shiftKey()][name] = priority;
+  }
+  saveState(s);
+  renderShift();
+  renderTodo();
+}
+
+function saveShiftTaskNote(name, note) {
+  const s = getState();
+  if (!s.shiftNotes) s.shiftNotes = {};
+  if (!s.shiftNotes[shiftKey()]) s.shiftNotes[shiftKey()] = {};
+  if (note.trim()) {
+    s.shiftNotes[shiftKey()][name] = note.trim();
+  } else {
+    delete s.shiftNotes[shiftKey()][name];
   }
   saveState(s);
 }
@@ -2610,13 +2646,15 @@ function cleanupOldData() {
 // ─── INIT ────────────────────────────────────────────────────────────
 (function() {
   cleanupOldData();
-  // Auto-login if a valid session exists within 30 minutes
+  // Auto-login only if this is a PAGE REFRESH (same browser tab session),
+  // not a fresh open. sessionStorage is cleared when the tab is closed or
+  // a new tab is opened, but survives a refresh.
+  const isRefresh = sessionStorage.getItem('nenaghOpsActive') === 'true';
   const s = getState();
-  if (s.session && s.session.manager && MANAGERS[s.session.manager]) {
+  if (isRefresh && s.session && s.session.manager && MANAGERS[s.session.manager]) {
     const elapsed = Date.now() - s.session.loginTime;
     if (elapsed < SESSION_DURATION) {
       currentManager = s.session.manager;
-      // Refresh the session timestamp
       s.session.loginTime = Date.now();
       saveState(s);
       document.getElementById('login-screen').style.display = 'none';
@@ -2624,11 +2662,17 @@ function cleanupOldData() {
       document.getElementById('top-bar-user').textContent = currentManager;
       initApp();
     } else {
-      // Session expired — clear it
       delete s.session;
       saveState(s);
+      sessionStorage.removeItem('nenaghOpsActive');
     }
+  } else if (!isRefresh) {
+    // Fresh load — clear any stale session so no auto-login
+    delete s.session;
+    saveState(s);
   }
+  // Mark this tab as active so refreshes work
+  sessionStorage.setItem('nenaghOpsActive', 'true');
 })();
 </script>
 </body>
