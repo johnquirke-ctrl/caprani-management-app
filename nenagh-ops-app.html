@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nenagh Ops">
+<title>Nenagh — Ops App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;max-width:600px;margin:0 auto}
+
+/* LOGIN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:#fff}
+.login-logo{font-size:48px;margin-bottom:1rem}
+.login-title{font-size:22px;font-weight:700;color:#d4000a;margin-bottom:4px}
+.login-sub{font-size:14px;color:#888;margin-bottom:2rem}
+.login-select{width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;font-size:16px;font-family:inherit;background:#fafafa;color:#1a1a1a;margin-bottom:12px;-webkit-appearance:none}
+.pin-label{font-size:13px;color:#888;align-self:flex-start;margin-bottom:5px;font-weight:500}
+.pin-input{width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;font-size:24px;letter-spacing:8px;text-align:center;font-family:inherit;background:#fafafa;color:#1a1a1a;margin-bottom:12px}
+.login-btn{width:100%;padding:14px;border-radius:10px;background:#d4000a;color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-btn:active{opacity:0.85}
+.login-error{color:#d4000a;font-size:13px;margin-top:8px;display:none}
+
+/* NAV */
+#app-screen{display:none;flex-direction:column;min-height:100vh}
+.top-bar{background:#d4000a;color:#fff;padding:12px 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.top-bar-title{font-size:16px;font-weight:600}
+.top-bar-user{font-size:12px;opacity:0.85}
+.logout-btn{font-size:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:#fff;border-top:1px solid #e5e5e0;display:flex;z-index:20}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:transparent;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;color:#999;font-size:10px;font-weight:500}
+.nav-btn.active{color:#d4000a}
+.nav-icon{font-size:22px;line-height:1}
+
+.content{padding:0 0 80px;flex:1}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* SHARED COMPONENTS */
+.section-header{padding:8px 1rem;background:#eeeee8;font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.07em;display:flex;justify-content:space-between}
+.card{background:#fff;border-radius:12px;margin:12px;overflow:hidden;border:1px solid #e5e5e0}
+.card-header{padding:12px 1rem;border-bottom:1px solid #f0f0ec;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:15px;font-weight:600}
+
+.progress-wrap{background:#fff;padding:10px 1rem;border-bottom:1px solid #e5e5e0}
+.progress-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:#1D9E75;border-radius:3px;transition:width 0.3s}
+.progress-label{font-size:12px;color:#888;margin-top:4px}
+
+.task-row{display:grid;grid-template-columns:36px 1fr auto;align-items:start;padding:11px 1rem;background:#fff;border-bottom:1px solid #f0f0ec;gap:10px;cursor:pointer}
+.task-row:active{background:#fafaf8}
+.task-row.done{opacity:0.42}
+.task-row.done .task-name{text-decoration:line-through}
+.task-row.todo-item{background:#fffbf0;border-left:3px solid #f0a500}
+.checkbox{width:22px;height:22px;border-radius:5px;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.15s}
+.checkbox.checked{background:#1D9E75;border-color:#1D9E75}
+.checkmark{color:#fff;font-size:13px;font-weight:700;line-height:1}
+.task-name{font-size:14px;color:#1a1a1a;line-height:1.4}
+.task-meta{font-size:12px;color:#888;margin-top:2px}
+
+.badge{font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.badge-carried{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.badge-area{background:#f0f0ec;color:#555}
+
+/* FILTERS */
+.filters{display:flex;gap:6px;overflow-x:auto;padding:10px 1rem;background:#fff;border-bottom:1px solid #e5e5e0;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;white-space:nowrap;color:#555;font-family:inherit;flex-shrink:0}
+.filter-btn.active{background:#d4000a;color:#fff;border-color:#d4000a}
+
+/* SIGN OFF */
+.signoff-panel{background:#fff;margin:8px 12px;border-radius:12px;padding:1.25rem;border:1px solid #e5e5e0}
+.signoff-panel h3{font-size:15px;font-weight:600;margin-bottom:1rem}
+.field label{font-size:12px;color:#888;display:block;margin-bottom:4px;font-weight:500}
+.field input[readonly]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #eee;background:#f5f5f0;color:#888;font-size:14px;font-family:inherit}
+.sign-name-display{font-size:15px;font-weight:600;color:#1a1a1a;padding:8px 0}
+.signoff-btn{width:100%;padding:13px;border-radius:10px;background:#1D9E75;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:12px}
+.signoff-btn:active{opacity:0.85}
+.signed-box{background:#EAF3DE;border-radius:10px;padding:1rem;margin-top:0.75rem;display:none;border:1px solid #c0dd97}
+.signed-name{font-size:15px;font-weight:600;color:#3B6D11}
+.signed-time{font-size:13px;color:#639922;margin-top:2px}
+.signed-note{font-size:12px;color:#3B6D11;margin-top:8px;padding-top:8px;border-top:1px solid #c0dd97}
+
+/* TOILET LOG */
+.toilet-log-btn{display:block;width:calc(100% - 24px);margin:12px;padding:18px;border-radius:12px;background:#d4000a;color:#fff;border:none;font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
+.toilet-log-btn:active{opacity:0.85}
+.toilet-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 12px 4px}
+.toilet-stat{background:#fff;border-radius:10px;padding:10px;text-align:center;border:1px solid #e5e5e0}
+.toilet-stat-num{font-size:22px;font-weight:700;color:#1a1a1a}
+.toilet-stat-num.overdue{color:#d4000a}
+.toilet-stat-num.done{color:#1D9E75}
+.toilet-stat-label{font-size:11px;color:#888;margin-top:2px}
+.slot-row{display:grid;grid-template-columns:60px 1fr auto;align-items:center;padding:9px 1rem;background:#fff;border-bottom:1px solid #f0f0ec;gap:10px}
+.slot-time{font-size:13px;font-weight:600;color:#555;white-space:nowrap}
+.slot-status{font-size:13px}
+.slot-by{font-size:12px;color:#888}
+.slot-badge{font-size:11px;padding:3px 9px;border-radius:10px;white-space:nowrap;font-weight:600}
+.slot-done{background:#EAF3DE;color:#3B6D11}
+.slot-overdue{background:#FCEBEB;color:#A32D2D}
+.slot-upcoming{background:#f0f0ec;color:#888}
+.slot-current{background:#E6F1FB;color:#185FA5}
+.history-header{display:flex;align-items:center;justify-content:space-between;padding:10px 1rem;background:#eeeee8;border-bottom:1px solid #e0e0d8;cursor:pointer;user-select:none}
+.history-header-label{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.07em}
+.history-chevron{font-size:13px;color:#888;transition:transform 0.2s}
+.history-chevron.open{transform:rotate(180deg)}
+.history-body{display:none}
+.history-body.open{display:block}
+.log-entry{display:flex;align-items:center;justify-content:space-between;padding:11px 1rem;background:#fff;border-bottom:1px solid #f0f0ec}
+.log-entry-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.log-entry-time{font-size:12px;color:#888}
+.log-entry-icon{font-size:20px}
+.empty-state{padding:2rem;text-align:center;color:#888;font-size:14px}
+
+/* TODO */
+.todo-count-badge{background:#d4000a;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px}
+
+/* PAGE HEADERS */
+.page-header{background:#fff;padding:1rem;border-bottom:1px solid #e5e5e0}
+.page-header h2{font-size:18px;font-weight:600}
+.page-header p{font-size:13px;color:#888;margin-top:3px}
+
+.shift-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:6px;vertical-align:middle}
+.shift-open{background:#E6F1FB;color:#185FA5}
+.shift-mid{background:#EEEDFE;color:#534AB7}
+.shift-close{background:#EAF3DE;color:#3B6D11}
+
+.bottom-pad{height:1rem}
+
+/* TOILET ALERT POPUP */
+#toilet-alert-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100;align-items:center;justify-content:center;padding:1.5rem}
+#toilet-alert-overlay.visible{display:flex}
+#toilet-alert-box{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:340px;text-align:center;animation:popIn 0.2s ease}
+@keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+.alert-icon{font-size:44px;margin-bottom:0.75rem}
+.alert-title{font-size:19px;font-weight:700;color:#1a1a1a;margin-bottom:6px}
+.alert-msg{font-size:14px;color:#555;line-height:1.5;margin-bottom:1.25rem}
+.alert-slot{font-size:22px;font-weight:700;color:#d4000a;margin-bottom:1rem}
+.alert-btn-check{width:100%;padding:13px;border-radius:10px;background:#1D9E75;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px}
+.alert-btn-check:active{opacity:0.85}
+.alert-btn-dismiss{width:100%;padding:11px;border-radius:10px;background:transparent;color:#888;border:1px solid #ddd;font-size:14px;cursor:pointer;font-family:inherit}
+.alert-btn-dismiss:active{background:#f5f5f0}
+</style>
+</head>
+<body>
+
+<!-- TOILET ALERT POPUP -->
+<div id="toilet-alert-overlay">
+  <div id="toilet-alert-box">
+    <div class="alert-icon">🚻</div>
+    <div class="alert-title">Toilet check due soon</div>
+    <div class="alert-slot" id="alert-slot-time"></div>
+    <div class="alert-msg">The next toilet check is due in 5 minutes. Please make your way to check the toilets for cleanliness and spills.</div>
+    <button class="alert-btn-check" onclick="alertCheckNow()">✓ Check now &amp; log it</button>
+    <button class="alert-btn-dismiss" onclick="alertDismiss()">Dismiss — I'll check shortly</button>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-logo">🍟</div>
+  <div class="login-title">Nenagh Ops</div>
+  <div class="login-sub">Sign in to continue</div>
+  <select class="login-select" id="manager-select">
+    <option value="">Select your name...</option>
+    <option value="Anna Beleznai">Anna Beleznai</option>
+    <option value="Dora Danko">Dora Danko</option>
+    <option value="John Quirke">John Quirke</option>
+  </select>
+  <div class="pin-label">Enter your PIN</div>
+  <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-input" placeholder="••••">
+  <button class="login-btn" onclick="doLogin()">Sign in</button>
+  <div class="login-error" id="login-error">Incorrect PIN. Please try again.</div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="top-bar">
+    <div>
+      <div class="top-bar-title">Nenagh Ops</div>
+      <div class="top-bar-user" id="top-bar-user"></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+
+  <div class="content">
+
+    <!-- PAGE: SHIFT CHECKLIST -->
+    <div class="page active" id="page-shift">
+      <div class="page-header">
+        <h2>Shift checklist <span class="shift-tag" id="shift-tag-label"></span></h2>
+        <p id="shift-date-label"></p>
+      </div>
+      <div class="filters" id="shift-filters"></div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="shift-prog" style="width:0%"></div></div>
+        <p class="progress-label" id="shift-prog-label"></p>
+      </div>
+      <div id="shift-task-list"></div>
+      <div class="signoff-panel">
+        <h3>Sign off shift checklist</h3>
+        <div class="field" style="margin-bottom:10px">
+          <label>Manager</label>
+          <div class="sign-name-display" id="shift-sign-name"></div>
+        </div>
+        <div class="field">
+          <label>Date &amp; time</label>
+          <input type="text" id="shift-sign-time" readonly>
+        </div>
+        <button class="signoff-btn" onclick="signOffShift()">✓ Sign off &amp; hand over</button>
+        <div class="signed-box" id="shift-signed-box">
+          <div class="signed-name" id="shift-signed-name"></div>
+          <div class="signed-time" id="shift-signed-time"></div>
+          <div class="signed-note" id="shift-signed-note"></div>
+        </div>
+      </div>
+      <div class="bottom-pad"></div>
+    </div>
+
+    <!-- PAGE: TO-DO LIST -->
+    <div class="page" id="page-todo">
+      <div class="page-header">
+        <h2>To-do list <span id="todo-count-header"></span></h2>
+        <p>Tasks carried forward from previous shifts</p>
+      </div>
+      <div id="todo-list"></div>
+      <div class="bottom-pad"></div>
+    </div>
+
+    <!-- PAGE: CLEANING CHECKLIST -->
+    <div class="page" id="page-cleaning">
+      <div class="page-header">
+        <h2>Cleaning checklist</h2>
+        <p id="cleaning-date-label"></p>
+      </div>
+      <div class="filters" id="cleaning-filters"></div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="cleaning-prog" style="width:0%"></div></div>
+        <p class="progress-label" id="cleaning-prog-label"></p>
+      </div>
+      <div id="cleaning-task-list"></div>
+      <div class="signoff-panel">
+        <h3>Sign off cleaning checklist</h3>
+        <div class="field" style="margin-bottom:10px">
+          <label>Manager</label>
+          <div class="sign-name-display" id="cleaning-sign-name"></div>
+        </div>
+        <div class="field">
+          <label>Date &amp; time</label>
+          <input type="text" id="cleaning-sign-time" readonly>
+        </div>
+        <button class="signoff-btn" onclick="signOffCleaning()">✓ Sign off cleaning checklist</button>
+        <div class="signed-box" id="cleaning-signed-box">
+          <div class="signed-name" id="cleaning-signed-name"></div>
+          <div class="signed-time" id="cleaning-signed-time"></div>
+          <div class="signed-note" id="cleaning-signed-note"></div>
+        </div>
+      </div>
+      <div class="bottom-pad"></div>
+    </div>
+
+    <!-- PAGE: TOILET LOG -->
+    <div class="page" id="page-toilet">
+      <div class="page-header">
+        <h2>Toilet log</h2>
+        <p>Every 30 minutes · <span id="toilet-hours-label"></span></p>
+      </div>
+      <button class="toilet-log-btn" onclick="logToiletCheck()">✓ Toilets checked — all clear</button>
+
+      <div class="section-header" style="margin-top:8px"><span>Schedule</span><span id="toilet-count">0 checks</span></div>
+      <div id="toilet-log-list"><div class="empty-state">Loading schedule...</div></div>
+      <div class="bottom-pad"></div>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-shift" onclick="showPage('shift')">
+      <span class="nav-icon">📋</span>Shift
+    </button>
+    <button class="nav-btn" id="nav-todo" onclick="showPage('todo')">
+      <span class="nav-icon">📌</span><span>To-do<span id="todo-nav-badge"></span></span>
+    </button>
+    <button class="nav-btn" id="nav-cleaning" onclick="showPage('cleaning')">
+      <span class="nav-icon">🧹</span>Cleaning
+    </button>
+    <button class="nav-btn" id="nav-toilet" onclick="showPage('toilet')">
+      <span class="nav-icon">🚻</span>Toilets
+    </button>
+  </div>
+</div><!-- end app-screen -->
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────
+const MANAGERS = {
+  "Anna Beleznai": "6481",
+  "Dora Danko":    "7972",
+  "John Quirke":   "5081"
+};
+
+const SHIFT_TASKS = [
+  // Office
+  {area:"Office", name:"Read managers' diary, check email (ops update) and read any print out in document holder"},
+  {area:"Office", name:"Review Training Plan and complete as required"},
+  {area:"Office", name:"Check projected sales and GCs — busiest hour and tightest hour for labour (check LifeLens to manage breaks)"},
+  {area:"Office", name:"Log in to BrandMate to make sure all DFS checks are completed. Review Product Outage tool and action"},
+  {area:"Office", name:"Review any open eTech tickets and IT tickets"},
+  {area:"Office", name:"Safe counted (or assigned)"},
+  // Outside
+  {area:"Outside", name:"Patio area clean, bins ok and tables wiped down if wet from rain"},
+  {area:"Outside", name:"Car park free of litter, leaves and stones"},
+  {area:"Outside", name:"Review speaker for order being checked on screen, and booth 1 doing order–order–cash"},
+  {area:"Outside", name:"Walk through DT — check signs, windows and screens for cleanliness"},
+  // Dining Area
+  {area:"Dining Area", name:"Check cleanliness (entry grate, entry mat, corners, window sills, floors, baseboards, highchairs, floor signs, seating, decor, lights)"},
+  {area:"Dining Area", name:"KIOSK printers working with printer roll stocked"},
+  {area:"Dining Area", name:"KIOSKs table service on and enough tent cards"},
+  {area:"Dining Area", name:"Ensure atmosphere is good — music, lighting and HVAC all ok"},
+  {area:"Dining Area", name:"Check cleanliness and BWS of: condiments bar, bin and Keeko board"},
+  {area:"Dining Area", name:"Customers toilets cleaned and stocked (soap, toilet paper) with flush and hot tap working. No TP left out"},
+  // Crew Area
+  {area:"Crew Area, Stock Room & Bins", name:"Crew room tidy and clean. Belongings away in lockers/stools. Nothing on top of lockers"},
+  {area:"Crew Area, Stock Room & Bins", name:"Crew toilets are clean (hairnets/masks/shoes) and stocked up (soap, toilet paper). No TP left out"},
+  {area:"Crew Area, Stock Room & Bins", name:"Hallway is tidy (cardboard, bin bags). Buns in correct place. No water left in mop buckets. AED battery ok"},
+  {area:"Crew Area, Stock Room & Bins", name:"Stockroom has all boxes closed or covered, no stock on the floor or bare shelf"},
+  {area:"Crew Area, Stock Room & Bins", name:"Drink BIB Area stocked and clean (no caps/cardboard under Multiplex unit). All stock room as per Map"},
+  // Corral
+  {area:"Corral & Bin Area", name:"Ops unit stocked and tidy as per Map. Back door closed and alarmed"},
+  {area:"Corral & Bin Area", name:"Cages/wheels in order with bun trays stacked correctly by colour"},
+  {area:"Corral & Bin Area", name:"Correct bins in use with compactor up and bin lids closed. In bin area, bins fully closed (birds) and door locked"},
+  // Freezer/Chiller
+  {area:"Main Freezer & Chiller", name:"Maintain at correct temperature"},
+  {area:"Main Freezer & Chiller", name:"All primary shelf lifes in date"},
+  {area:"Main Freezer & Chiller", name:"All secondary shelf lifes in date"},
+  {area:"Main Freezer & Chiller", name:"No stock on the floor or out of boxes. All products as per Map"},
+  {area:"Main Freezer & Chiller", name:"3cm gap between stacks, 5cm gap between cases and walls, 15cm gap to ceiling, 30cm gap around evaporator. Beef away from door"},
+  {area:"Main Freezer & Chiller", name:"Follow stacking procedure (5x5 fry boxes)"},
+  // Back Sink
+  {area:"Back Sink", name:"All clothes fully submerged in sanitizer and lukewarm water with timers and strips in place"},
+  {area:"Back Sink", name:"Back sink clean and organised. Grease trap emptied"},
+  {area:"Back Sink", name:"All chemicals properly stocked, diluted and labeled — enough chemical packets stocked for day as per BWS"},
+  {area:"Back Sink", name:"Washing machine and dishwasher cleaned and working fine"},
+  // DT Booths/MFY
+  {area:"DT Booths / MFY", name:"Booth 1 clean with headsets working, batteries charged, note checker and coin cannister in use — check BWS"},
+  {area:"DT Booths / MFY", name:"Booth 2 stocked and clean with printer roll stocked — check BWS"},
+  {area:"DT Booths / MFY", name:"Ensure sufficient IPs prepared for volume"},
+  {area:"DT Booths / MFY", name:"Grills are clean (tools/cloths as per BWS) and working (in standby when not in use) — BB Procedures being followed"},
+  {area:"DT Booths / MFY", name:"Toasters are clean (check behind) with correct compression setting (B3)"},
+  {area:"DT Booths / MFY", name:"UHCs and trays are clean (4 hour timer) with e-production working and being followed (adjust if needed)"},
+  {area:"DT Booths / MFY", name:"Ovens, Microwave and Steamers are clean"},
+  {area:"DT Booths / MFY", name:"Freezers and Chillers are clean and stocked up with glove holders in place"},
+  {area:"DT Booths / MFY", name:"Dressing table is clean and stocked up at 10am as per BWS guide. No random equipment below"},
+  {area:"DT Booths / MFY", name:"Under table: Veggie Deluxe, Veggie Wrap, McPlant / Salad Boxes, Cheese Tempering, Extra Clams / Wrap Boxes"},
+  {area:"DT Booths / MFY", name:"Dressing table timer system in place and followed"},
+  {area:"DT Booths / MFY", name:"Hand wash, change cloth & glove timer set and activated"},
+  {area:"DT Booths / MFY", name:"Tempering in place as per BLC (printed daily)"},
+  {area:"DT Booths / MFY", name:"All use by dates and secondary timers are all in date and rotated (FIFO)"},
+  {area:"DT Booths / MFY", name:"Fry Vats are working, clean and stocked up (2 accu salt, 2 scoops and 2 dividers in place — all bulbs working) — BWS"},
+  {area:"DT Booths / MFY", name:"Handwashing sink is fully stocked (soap, kitchen roll) and not obstructed"},
+  // Beverage Cell
+  {area:"Beverage Cell", name:"Coffee machine cleanliness and coffee bean levels below lines — set up as per BWS"},
+  {area:"Beverage Cell", name:"SM and BIM all set up correctly with secondary shelf lifes in place and in date as per BWS"},
+  {area:"Beverage Cell", name:"Flurry dispensers set up correctly with relevant colour trays with secondary shelf lifes in place and in date"},
+  {area:"Beverage Cell", name:"Enough flurry spindles stocked in square clear pot, with black pot set up with 2hr SSL. Flurry freezer in use"},
+  {area:"Beverage Cell", name:"FC chiller set up as per BWS guide"},
+  {area:"Beverage Cell", name:"ABS stocked and fully functioning"},
+  {area:"Beverage Cell", name:"Sweet snacks: wrapped and stickered correctly, secondary shelf life in date and correct amount as per BLC"},
+  {area:"Beverage Cell", name:"Ensure BOAT is oriented correctly Breakfast/Main Menu and Beverage Bundler is in use (DT shelf, IS shelf)"},
+  {area:"Beverage Cell", name:"Dry stock levels — get stock as per BWS"},
+  // Service
+  {area:"Service", name:"Under counter trolleys are all clean, organized and stocked up as per BWS"},
+  {area:"Service", name:"Tills working fine with printer roll stocked"},
+  {area:"Service", name:"Table Service aprons clean, stocked and being worn by all service staff (remind TS/DA staff about CSAT surveys). Hi vis PF"},
+  {area:"Service", name:"OAT stocked up with lamps and printers working"},
+  // General
+  {area:"General", name:"Communicate with previous shift manager to handover shift — discuss plan with Area Leaders too"},
+  {area:"General", name:"Set and communicate the targets with your team (every hour on Speed of Service and KVS Sheet)"},
+  {area:"General", name:"All stations have red cloths in pots and staff aware of secondary responsibilities"},
+  {area:"General", name:"Log any IT issues and inform Mgmt of any Equipment issues"},
+  {area:"General", name:"All stations set up with no mess/wrong equipment around them (inc tape, kitchen roll, stainless steel, gloves etc)"},
+  {area:"General", name:"Check staff appearance (sock check, snood, hair net etc)"},
+];
+
+const CLEANING_TASKS = [
+  {area:"Exterior",name:"Sweep stones",desc:"",freq:"daily"},
+  {area:"Exterior",name:"Trash walk (roundabout to Woodies)",desc:"Pick up all litter, not just McDs",freq:"daily"},
+  {area:"Exterior",name:"DT height restrictor",desc:"Detail clean",freq:"weekly"},
+  {area:"Exterior",name:"Back corral door",desc:"Detail clean",freq:"weekly"},
+  {area:"Exterior",name:"Bin storage area",desc:"Detail clean",freq:"weekly"},
+  {area:"Exterior",name:"Sweep up all leaves/branches",desc:"",freq:"weekly"},
+  {area:"Exterior",name:"Deck scrub entrance",desc:"Degrease grease trail with hot water and degreaser",freq:"fortnightly"},
+  {area:"Exterior",name:"DT screens and frame (inc at Booth 1)",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Exterior",name:"External advertising (Coffee/Promo/DT)",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Exterior",name:"External windows",desc:"Detail clean (DT booths and Dining Area, including sills)",freq:"fortnightly"},
+  {area:"Exterior",name:"Clean ashtray",desc:"Replace sand",freq:"fortnightly"},
+  {area:"Exterior",name:"Disabled/pull forward signs",desc:"Detail clean",freq:"monthly"},
+  {area:"Exterior",name:"DT speaker",desc:"Detail clean",freq:"monthly"},
+  {area:"Exterior",name:"DT canopy",desc:"Detail clean (quarterly)",freq:"other"},
+  {area:"Exterior",name:"Cut grass and strim edges",desc:"Including strip beyond fence",freq:"other"},
+  {area:"Exterior",name:"Large bins",desc:"Detail clean",freq:"other"},
+  {area:"Exterior",name:"McDonald's roof signage",desc:"Detail clean",freq:"other"},
+  {area:"Exterior",name:"Exterior of ops shed, freezer and chiller",desc:"Detail clean",freq:"other"},
+  {area:"Dining Area",name:"Baseboards, doors and frames",desc:"Detail clean (inc toilet corridor)",freq:"weekly"},
+  {area:"Dining Area",name:"Wash windows internally",desc:"Including porch",freq:"weekly"},
+  {area:"Dining Area",name:"Condiment cabinet",desc:"Stainless holders, cabinet, ketchup nozzles detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"Bin",desc:"Detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"Return box",desc:"Detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"Tent cards",desc:"Wipe down/sanitize",freq:"weekly"},
+  {area:"Dining Area",name:"Kiosk screens, frames and bases",desc:"Detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"High chairs",desc:"Detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"Door stainless bases and handles",desc:"Detail clean",freq:"weekly"},
+  {area:"Dining Area",name:"Deck scrub DA floor",desc:"Inc grey lines degreased",freq:"weekly"},
+  {area:"Dining Area",name:"Bench tops and legs",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Dining Area",name:"Grate at entrance",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Dining Area",name:"Stool tops and bases",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Dining Area",name:"DA lighting and vents (inc Toilets/Corridor)",desc:"Dust",freq:"fortnightly"},
+  {area:"Dining Area",name:"Crispy fries sign",desc:"Detail clean (and surrounding wall)",freq:"fortnightly"},
+  {area:"Dining Area",name:"Screens, frames and sills",desc:"CCTV, DMB, ORB, Digit Advertising",freq:"monthly"},
+  {area:"Dining Area",name:"Entrance mat",desc:"Wash and swap",freq:"monthly"},
+  {area:"Dining Area",name:"Wet floor signs",desc:"Detail clean",freq:"other"},
+  {area:"Customer and Crew Toilets",name:"Toilet walls (inc under hand dryer)",desc:"Detail clean",freq:"weekly"},
+  {area:"Customer and Crew Toilets",name:"Toilet, brush, sink and baby changing",desc:"Detail clean",freq:"weekly"},
+  {area:"Customer and Crew Toilets",name:"Deck scrub toilet floors",desc:"Detail clean",freq:"weekly"},
+  {area:"Customer and Crew Toilets",name:"Toilet corridor frames/baseboards/walls",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Crew Room",name:"Tidy storage stools, lockers (above), top press and fridge",desc:"",freq:"weekly"},
+  {area:"Crew Room",name:"Fix any popped off locker hinges",desc:"",freq:"weekly"},
+  {area:"Crew Room",name:"Clean fridge and microwave",desc:"Detail clean",freq:"weekly"},
+  {area:"Crew Room",name:"Clean crew room tables, chairs and stools",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Crew Room",name:"Crew room walls, base boards, door handles and steel kickboards",desc:"Detail clean",freq:"fortnightly"},
+  {area:"Crew Room",name:"Clean front of lockers",desc:"",freq:"monthly"},
+  {area:"Corral and Shed",name:"Detail clean back yard after delivery",desc:"",freq:"weekly"},
+  {area:"Corral and Shed",name:"Clean and re-organise ops shed after delivery",desc:"",freq:"weekly"},
+  {area:"Corral and Shed",name:"Clean glass above back door",desc:"",freq:"fortnightly"},
+  {area:"Corral and Shed",name:"Clean back corral wall, compactor, OSCAR and elephant",desc:"",freq:"monthly"},
+  {area:"Back Room",name:"Wipe down corridor doors, handles and kickboards",desc:"",freq:"weekly"},
+  {area:"Back Room",name:"Deck scrub back corridors after delivery",desc:"",freq:"weekly"},
+  {area:"Back Room",name:"Dry stock deck scrub",desc:"",freq:"weekly"},
+  {area:"Back Room",name:"De-ice freezer",desc:"",freq:"weekly"},
+  {area:"Back Room",name:"Wipe down ladder and defib box",desc:"",freq:"monthly"},
+  {area:"Back Room",name:"Dry stock walls and baseboards",desc:"",freq:"monthly"},
+  {area:"Back Room",name:"Clean mop buckets/handles, brush and dustpans",desc:"",freq:"fortnightly"},
+  {area:"Back Room",name:"Clean chiller/freezer walls, bareboards, shelves and shake trolley",desc:"",freq:"monthly"},
+  {area:"Back Room",name:"Dry stock multiplex, salt container and wraps container",desc:"",freq:"monthly"},
+  {area:"Back Room",name:"Wash hi-vis uniforms",desc:"",freq:"other"},
+  {area:"Back Room",name:"Deep clean freezer matting",desc:"",freq:"other"},
+  {area:"Back Sink",name:"Behind washing machine (inc plinth)/dishwasher",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"All skirting boards and pipes under sink",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Under sink/greaseshield including walls/boards",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Clean Hobart salt unit",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Wipe down Ecolab fly killing units",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Cloth trolley base and inserts",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Red buckets under sink",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"Small sink",desc:"",freq:"fortnightly"},
+  {area:"Back Sink",name:"GreaseShield unit",desc:"",freq:"fortnightly"},
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────
+let currentManager = null;
+let currentPage = 'shift';
+
+// Persisted in localStorage
+function getState() {
+  try { return JSON.parse(localStorage.getItem('nenagh_ops') || '{}'); } catch(e) { return {}; }
+}
+function saveState(s) {
+  localStorage.setItem('nenagh_ops', JSON.stringify(s));
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ─── LOGIN ──────────────────────────────────────────────────────────
+function doLogin() {
+  const name = document.getElementById('manager-select').value;
+  const pin  = document.getElementById('pin-input').value;
+  const err  = document.getElementById('login-error');
+  if (!name || !MANAGERS[name]) { err.style.display='block'; err.textContent='Please select your name.'; return; }
+  if (pin !== MANAGERS[name])   { err.style.display='block'; err.textContent='Incorrect PIN. Please try again.'; return; }
+  err.style.display='none';
+  currentManager = name;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+  document.getElementById('top-bar-user').textContent = name;
+  initApp();
+}
+
+document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  currentManager = null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('pin-input').value='';
+  document.getElementById('manager-select').value='';
+}
+
+// ─── APP INIT ────────────────────────────────────────────────────────
+function initApp() {
+  updateDateTime();
+  setInterval(updateDateTime, 30000);
+  setInterval(renderToilet, 60000); // refresh toilet timeline every minute
+  setInterval(checkToiletAlert, 30000); // check for upcoming toilet alert every 30s
+  checkToiletAlert(); // check immediately on login too
+  buildShiftFilters();
+  buildCleaningFilters();
+  renderShift();
+  renderTodo();
+  renderCleaning();
+  renderToilet();
+  showPage('shift');
+}
+
+function updateDateTime() {
+  const now = new Date();
+  const ds = now.toLocaleDateString('en-IE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('shift-date-label').textContent = ds;
+  document.getElementById('cleaning-date-label').textContent = ds;
+  document.getElementById('shift-sign-time').value = ts;
+  document.getElementById('cleaning-sign-time').value = ts;
+  document.getElementById('shift-sign-name').textContent = currentManager || '';
+  document.getElementById('cleaning-sign-name').textContent = currentManager || '';
+
+  // shift tag
+  const h = now.getHours();
+  let shiftName='', shiftClass='';
+  if(h < 12)      { shiftName='Open';  shiftClass='shift-open'; }
+  else if(h < 17) { shiftName='Mid';   shiftClass='shift-mid'; }
+  else            { shiftName='Close'; shiftClass='shift-close'; }
+  const tag = document.getElementById('shift-tag-label');
+  tag.textContent = shiftName;
+  tag.className = 'shift-tag ' + shiftClass;
+}
+
+// ─── PAGE NAV ────────────────────────────────────────────────────────
+function showPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+}
+
+// ─── SHIFT CHECKLIST ────────────────────────────────────────────────
+let shiftFilter = 'all';
+
+function buildShiftFilters() {
+  const areas = [...new Set(SHIFT_TASKS.map(t=>t.area))];
+  let html = `<button class="filter-btn active" onclick="setShiftFilter('all',this)">All</button>`;
+  areas.forEach(a => {
+    html += `<button class="filter-btn" onclick="setShiftFilter('${a.replace(/'/g,"\\'")}',this)">${a}</button>`;
+  });
+  document.getElementById('shift-filters').innerHTML = html;
+}
+
+function setShiftFilter(area, btn) {
+  shiftFilter = area;
+  document.querySelectorAll('#shift-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderShift();
+}
+
+function getShiftChecked() {
+  const s = getState();
+  return s.shiftChecked && s.shiftChecked[todayKey()] ? new Set(s.shiftChecked[todayKey()]) : new Set();
+}
+
+function toggleShiftTask(name) {
+  const s = getState();
+  if (!s.shiftChecked) s.shiftChecked = {};
+  if (!s.shiftChecked[todayKey()]) s.shiftChecked[todayKey()] = [];
+  const arr = s.shiftChecked[todayKey()];
+  const idx = arr.indexOf(name);
+  if (idx > -1) arr.splice(idx,1); else arr.push(name);
+  saveState(s);
+  renderShift();
+  renderTodo();
+}
+
+function renderShift() {
+  const checked = getShiftChecked();
+  const filtered = shiftFilter==='all' ? SHIFT_TASKS : SHIFT_TASKS.filter(t=>t.area===shiftFilter);
+  const areas = [...new Set(filtered.map(t=>t.area))];
+  let html = '';
+  areas.forEach(area => {
+    const items = filtered.filter(t=>t.area===area);
+    const done = items.filter(t=>checked.has(t.name)).length;
+    html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
+    items.forEach(t => {
+      const isDone = checked.has(t.name);
+      const safe = t.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<div class="task-row${isDone?' done':''}" onclick="toggleShiftTask('${safe}')">
+        <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
+        <div><div class="task-name">${t.name}</div></div>
+        <span></span>
+      </div>`;
+    });
+  });
+  document.getElementById('shift-task-list').innerHTML = html;
+  const total = filtered.length;
+  const done  = filtered.filter(t=>checked.has(t.name)).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('shift-prog').style.width = pct+'%';
+  document.getElementById('shift-prog-label').textContent = `${done} of ${total} tasks completed (${pct}%)`;
+}
+
+function signOffShift() {
+  const checked = getShiftChecked();
+  const unchecked = SHIFT_TASKS.filter(t=>!checked.has(t.name));
+  const s = getState();
+  if (!s.todoList) s.todoList = [];
+
+  // Add unchecked tasks to todo, avoid duplicates
+  unchecked.forEach(t => {
+    const exists = s.todoList.find(td=>td.name===t.name && !td.done);
+    if (!exists) {
+      s.todoList.push({
+        name: t.name,
+        area: t.area,
+        addedBy: currentManager,
+        addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+        addedDate: todayKey(),
+        done: false,
+        doneBy: null,
+        doneAt: null
+      });
+    }
+  });
+
+  // Log sign-off
+  if (!s.shiftSignoffs) s.shiftSignoffs = [];
+  s.shiftSignoffs.push({
+    manager: currentManager,
+    time: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    completed: checked.size,
+    total: SHIFT_TASKS.length,
+    carried: unchecked.length
+  });
+  saveState(s);
+
+  const box = document.getElementById('shift-signed-box');
+  document.getElementById('shift-signed-name').textContent = '✓ Signed off by ' + currentManager;
+  document.getElementById('shift-signed-time').textContent = document.getElementById('shift-sign-time').value;
+  document.getElementById('shift-signed-note').textContent =
+    `${checked.size} of ${SHIFT_TASKS.length} tasks completed. ${unchecked.length > 0 ? unchecked.length + ' task(s) carried forward to to-do list.' : 'All tasks completed — great shift!'}`;
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  renderTodo();
+  updateTodoBadge();
+}
+
+// ─── TO-DO LIST ──────────────────────────────────────────────────────
+function getTodo() {
+  const s = getState();
+  return s.todoList || [];
+}
+
+function toggleTodo(idx) {
+  const s = getState();
+  if (!s.todoList) return;
+  const item = s.todoList[idx];
+  if (item.done) {
+    item.done = false; item.doneBy = null; item.doneAt = null;
+  } else {
+    item.done = true;
+    item.doneBy = currentManager;
+    item.doneAt = new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  saveState(s);
+  renderTodo();
+  updateTodoBadge();
+}
+
+function renderTodo() {
+  const todo = getTodo();
+  const open = todo.filter(t=>!t.done);
+  const done = todo.filter(t=>t.done);
+
+  updateTodoBadge();
+
+  const countEl = document.getElementById('todo-count-header');
+  if (open.length > 0) {
+    countEl.innerHTML = `<span class="todo-count-badge">${open.length}</span>`;
+  } else {
+    countEl.innerHTML = '';
+  }
+
+  let html = '';
+  if (open.length === 0 && done.length === 0) {
+    html = '<div class="empty-state">No outstanding tasks — all clear! 🎉</div>';
+  } else {
+    if (open.length > 0) {
+      html += `<div class="section-header"><span>Outstanding</span><span>${open.length} remaining</span></div>`;
+      todo.forEach((t,i) => {
+        if (t.done) return;
+        const safe = i;
+        html += `<div class="task-row todo-item" onclick="toggleTodo(${safe})">
+          <div class="checkbox"></div>
+          <div>
+            <div class="task-name">${t.name}</div>
+            <div class="task-meta">Carried from ${t.addedBy} · ${t.addedAt}</div>
+          </div>
+          <span class="badge badge-area">${t.area}</span>
+        </div>`;
+      });
+    }
+    if (done.length > 0) {
+      html += `<div class="section-header" style="margin-top:8px"><span>Completed today</span><span>${done.length}</span></div>`;
+      todo.forEach((t,i) => {
+        if (!t.done) return;
+        html += `<div class="task-row done">
+          <div class="checkbox checked"><span class="checkmark">✓</span></div>
+          <div>
+            <div class="task-name">${t.name}</div>
+            <div class="task-meta">Done by ${t.doneBy} · ${t.doneAt}</div>
+          </div>
+          <span class="badge badge-area">${t.area}</span>
+        </div>`;
+      });
+    }
+  }
+  document.getElementById('todo-list').innerHTML = html;
+}
+
+function updateTodoBadge() {
+  const open = getTodo().filter(t=>!t.done).length;
+  const badge = document.getElementById('todo-nav-badge');
+  badge.innerHTML = open > 0 ? `<span class="todo-count-badge">${open}</span>` : '';
+}
+
+// ─── CLEANING CHECKLIST ──────────────────────────────────────────────
+let cleaningFilter = 'all';
+
+function buildCleaningFilters() {
+  const areas = [...new Set(CLEANING_TASKS.map(t=>t.area))];
+  let html = `<button class="filter-btn active" onclick="setCleaningFilter('all',this)">All</button>`;
+  areas.forEach(a => {
+    html += `<button class="filter-btn" onclick="setCleaningFilter('${a.replace(/'/g,"\\'")}',this)">${a}</button>`;
+  });
+  document.getElementById('cleaning-filters').innerHTML = html;
+}
+
+function setCleaningFilter(area, btn) {
+  cleaningFilter = area;
+  document.querySelectorAll('#cleaning-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCleaning();
+}
+
+function getCleaningChecked() {
+  const s = getState();
+  return s.cleaningChecked && s.cleaningChecked[todayKey()] ? new Set(s.cleaningChecked[todayKey()]) : new Set();
+}
+
+function toggleCleaningTask(key) {
+  const s = getState();
+  if (!s.cleaningChecked) s.cleaningChecked = {};
+  if (!s.cleaningChecked[todayKey()]) s.cleaningChecked[todayKey()] = [];
+  const arr = s.cleaningChecked[todayKey()];
+  const idx = arr.indexOf(key);
+  if (idx > -1) arr.splice(idx,1); else arr.push(key);
+  saveState(s);
+  renderCleaning();
+}
+
+const freqLabel = f => ({daily:'Daily',weekly:'Weekly',fortnightly:'Fortnightly',monthly:'Monthly',other:'Periodic'}[f]||f);
+const freqColors = {daily:'background:#EAF3DE;color:#3B6D11',weekly:'background:#E6F1FB;color:#185FA5',fortnightly:'background:#EEEDFE;color:#534AB7',monthly:'background:#FAEEDA;color:#854F0B',other:'background:#f0f0ec;color:#555'};
+
+function renderCleaning() {
+  const checked = getCleaningChecked();
+  const filtered = cleaningFilter==='all' ? CLEANING_TASKS : CLEANING_TASKS.filter(t=>t.area===cleaningFilter);
+  const areas = [...new Set(filtered.map(t=>t.area))];
+  let html = '';
+  areas.forEach(area => {
+    const items = filtered.filter(t=>t.area===area);
+    const done  = items.filter(t=>checked.has(t.area+'|'+t.name)).length;
+    html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
+    items.forEach(t => {
+      const key = t.area+'|'+t.name;
+      const isDone = checked.has(key);
+      const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<div class="task-row${isDone?' done':''}" onclick="toggleCleaningTask('${safeKey}')">
+        <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
+        <div>
+          <div class="task-name">${t.name}</div>
+          ${t.desc?`<div class="task-meta">${t.desc}</div>`:''}
+        </div>
+        <span class="badge" style="${freqColors[t.freq]||freqColors.other};padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap;flex-shrink:0;margin-top:2px">${freqLabel(t.freq)}</span>
+      </div>`;
+    });
+  });
+  document.getElementById('cleaning-task-list').innerHTML = html;
+  const total = filtered.length;
+  const done  = filtered.filter(t=>checked.has(t.area+'|'+t.name)).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('cleaning-prog').style.width = pct+'%';
+  document.getElementById('cleaning-prog-label').textContent = `${done} of ${total} tasks completed (${pct}%)`;
+}
+
+function signOffCleaning() {
+  const checked = getCleaningChecked();
+  const total = CLEANING_TASKS.length;
+  const done  = CLEANING_TASKS.filter(t=>checked.has(t.area+'|'+t.name)).length;
+  const s = getState();
+  if (!s.cleaningSignoffs) s.cleaningSignoffs = [];
+  s.cleaningSignoffs.push({
+    manager: currentManager,
+    time: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    completed: done, total
+  });
+  saveState(s);
+  const box = document.getElementById('cleaning-signed-box');
+  document.getElementById('cleaning-signed-name').textContent = '✓ Signed off by ' + currentManager;
+  document.getElementById('cleaning-signed-time').textContent = document.getElementById('cleaning-sign-time').value;
+  document.getElementById('cleaning-signed-note').textContent = `${done} of ${total} tasks completed.`;
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ─── TOILET LOG ──────────────────────────────────────────────────────
+
+function getToiletSlots() {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun,1=Mon,...,5=Fri,6=Sat
+  const isWeekend = (dow === 5 || dow === 6); // Fri or Sat
+  const closeHour = isWeekend ? 24 : 23;
+  const closeMin  = isWeekend ? 30 : 30;
+  const slots = [];
+  let h = 7, m = 0;
+  while (h < closeHour || (h === closeHour && m <= closeMin)) {
+    const displayH = h % 24;
+    slots.push({ h, m, label: String(displayH).padStart(2,'0')+':'+String(m).padStart(2,'0') });
+    m += 30;
+    if (m >= 60) { h++; m -= 60; }
+  }
+  document.getElementById('toilet-hours-label').textContent =
+    '07:00 – ' + (isWeekend ? '00:30 (Fri/Sat)' : '23:30');
+  return slots;
+}
+
+function getToiletLogs() {
+  const s = getState();
+  return (s.toiletLog && s.toiletLog[todayKey()]) || [];
+}
+
+function logToiletCheck() {
+  const now = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const slots = getToiletSlots();
+  // Find nearest unchecked slot at or before now
+  const logs = getToiletLogs();
+  const checkedSlots = new Set(logs.map(l=>l.slot));
+  // Find the most recent past slot not yet checked
+  let bestSlot = null;
+  for (let i = slots.length-1; i >= 0; i--) {
+    const slotMins = slots[i].h*60 + slots[i].m;
+    if (slotMins <= nowMins && !checkedSlots.has(slots[i].label)) {
+      bestSlot = slots[i].label;
+      break;
+    }
+  }
+  // If all past slots done, still log with current time slot
+  if (!bestSlot) {
+    // find next upcoming slot
+    for (let i = 0; i < slots.length; i++) {
+      const slotMins = slots[i].h*60 + slots[i].m;
+      if (slotMins > nowMins && !checkedSlots.has(slots[i].label)) {
+        bestSlot = slots[i].label; break;
+      }
+    }
+  }
+  if (!bestSlot && slots.length > 0) bestSlot = slots[slots.length-1].label;
+
+  const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const s = getState();
+  if (!s.toiletLog) s.toiletLog = {};
+  if (!s.toiletLog[todayKey()]) s.toiletLog[todayKey()] = [];
+  s.toiletLog[todayKey()].push({ manager: currentManager, time: ts, slot: bestSlot });
+  saveState(s);
+  pushCheckToSheets(bestSlot, ts);
+  renderToilet();
+}
+
+function renderToilet() {
+  const slots = getToiletSlots();
+  const logs  = getToiletLogs();
+  const now   = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const checkedMap = {};
+  logs.forEach(l => { if (!checkedMap[l.slot]) checkedMap[l.slot] = l; });
+
+  let doneCnt=0, historicalRows='', activeRows='';
+
+  slots.forEach(slot => {
+    const slotMins  = slot.h*60 + slot.m;
+    const minsAgo   = nowMins - slotMins;
+    const isPast    = slotMins <= nowMins;
+    const isHistory = isPast && minsAgo >= 90;
+    const isCurrent = !isPast && (slotMins - nowMins) <= 30;
+    const log = checkedMap[slot.label];
+
+    let rowHtml = '';
+    if (log) {
+      doneCnt++;
+      rowHtml = `<div class="slot-row">
+        <div class="slot-time">${slot.label}</div>
+        <div><div class="slot-status">✓ Checked</div><div class="slot-by">${log.manager} · ${log.time}</div></div>
+        <span class="slot-badge slot-done">Done</span>
+      </div>`;
+    } else if (isPast) {
+      rowHtml = `<div class="slot-row">
+        <div class="slot-time" style="color:#d4000a">${slot.label}</div>
+        <div><div class="slot-status" style="color:#d4000a">⚠ Not checked</div></div>
+        <span class="slot-badge slot-overdue">Overdue</span>
+      </div>`;
+    } else if (isCurrent) {
+      rowHtml = `<div class="slot-row">
+        <div class="slot-time" style="color:#185FA5">${slot.label}</div>
+        <div><div class="slot-status" style="color:#185FA5">Due soon</div></div>
+        <span class="slot-badge slot-current">Up next</span>
+      </div>`;
+    } else {
+      rowHtml = `<div class="slot-row">
+        <div class="slot-time">${slot.label}</div>
+        <div><div class="slot-status" style="color:#aaa">Scheduled</div></div>
+        <span class="slot-badge slot-upcoming">Upcoming</span>
+      </div>`;
+    }
+
+    if (isHistory) historicalRows += rowHtml;
+    else activeRows += rowHtml;
+  });
+
+  const histOpen = document.getElementById('toilet-log-list')?.dataset.histOpen === 'true';
+
+  let html = '';
+  if (historicalRows) {
+    html += `<div class="history-header" onclick="toggleToiletHistory(this)">
+      <span class="history-header-label">Historical</span>
+      <span class="history-chevron${histOpen?' open':''}">▼</span>
+    </div>
+    <div class="history-body${histOpen?' open':''}">${historicalRows}</div>`;
+  }
+  html += activeRows;
+
+  const listEl = document.getElementById('toilet-log-list');
+  listEl.dataset.histOpen = histOpen ? 'true' : 'false';
+  listEl.innerHTML = html || '<div class="empty-state">No slots yet today</div>';
+
+  const slotsDueByNow = slots.filter(slot => (slot.h*60 + slot.m) <= nowMins).length;
+  document.getElementById('toilet-count').textContent = doneCnt + ' of ' + slotsDueByNow + ' checks done';
+}
+
+function toggleToiletHistory(headerEl) {
+  const body    = headerEl.nextElementSibling;
+  const chevron = headerEl.querySelector('.history-chevron');
+  const isOpen  = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
+  document.getElementById('toilet-log-list').dataset.histOpen = isOpen ? 'true' : 'false';
+}
+
+// ─── TOILET ALERT ────────────────────────────────────────────────────
+let alertedSlots = new Set(); // slots we've already alerted for this session
+let pendingAlertSlot = null;
+
+function checkToiletAlert() {
+  if (!currentManager) return; // not logged in
+  const now = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const slots = getToiletSlots();
+  const logs  = getToiletLogs();
+  const checkedSlots = new Set(logs.map(l=>l.slot));
+
+  for (const slot of slots) {
+    const slotMins = slot.h*60 + slot.m;
+    const minsUntil = slotMins - nowMins;
+    // Fire alert if 4–6 mins away (window to catch the minute tick), not already checked, not already alerted
+    if (minsUntil >= 4 && minsUntil <= 6 && !checkedSlots.has(slot.label) && !alertedSlots.has(slot.label)) {
+      alertedSlots.add(slot.label);
+      pendingAlertSlot = slot.label;
+      document.getElementById('alert-slot-time').textContent = slot.label;
+      document.getElementById('toilet-alert-overlay').classList.add('visible');
+      break;
+    }
+  }
+}
+
+function alertCheckNow() {
+  document.getElementById('toilet-alert-overlay').classList.remove('visible');
+  logToiletCheck();
+  showPage('toilet');
+}
+
+function alertDismiss() {
+  document.getElementById('toilet-alert-overlay').classList.remove('visible');
+}
+
+// ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwXxsueERrPeCKoCB3uCUghODNUIQJMmh0E1kcdUDV0iCZRu4GRpuPeaVffe7UnMB0rEA/exec';
+
+function pushCheckToSheets(slot, checkedAt) {
+  const payload = {
+    date:      todayKey(),
+    slot:      slot,
+    manager:   currentManager,
+    checkedAt: checkedAt
+  };
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) console.error('Sheets push failed:', data.error);
+  })
+  .catch(err => console.error('Sheets push error:', err));
+}
+
+// ─── DAILY RESET ─────────────────────────────────────────────────────
+function cleanupOldData() {
+  const s = getState();
+  const today = todayKey();
+  if (s.todoList) {
+    s.todoList = s.todoList.filter(t => t.addedDate === today);
+  }
+  saveState(s);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+(function() {
+  cleanupOldData();
+})();
+</script>
+</body>
+</html>
