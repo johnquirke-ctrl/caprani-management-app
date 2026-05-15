@@ -131,6 +131,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .bottom-pad{height:1rem}
 
+/* SHIFT PHASE TABS */
+.shift-phase-btn{flex:1;padding:10px 4px;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#888;border-bottom:2px solid transparent}
+.shift-phase-btn.active{color:#d4000a;border-bottom:2px solid #d4000a}
+
+/* PRIORITY BADGES */
+.priority-a{background:#FCEBEB;color:#A32D2D;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.priority-b{background:#FAEEDA;color:#854F0B;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.priority-c{background:#E6F1FB;color:#185FA5;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.priority-d{background:#f0f0ec;color:#555;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+
+/* SMART TARGETS */
+.smart-row{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;margin-bottom:6px}
+.smart-num{font-size:12px;font-weight:600;color:#d4000a;padding-top:9px}
+.smart-input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit}
+
+/* TRAVEL PATH LOG */
+.travel-log-row{display:flex;justify-content:space-between;align-items:center;padding:8px 1rem;border-bottom:1px solid #f0f0ec;font-size:13px}
+.travel-log-time{color:#1a1a1a;font-weight:500}
+.travel-log-who{color:#888;font-size:12px}
+
 /* BREAK SHEET */
 .break-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:11px 1rem;background:#fff;border-bottom:1px solid #f0f0ec;gap:12px}
 .break-name{font-size:14px;font-weight:500;color:#1a1a1a}
@@ -220,39 +240,184 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <h2>Shift checklist <span class="shift-tag" id="shift-tag-label"></span></h2>
         <p id="shift-date-label"></p>
       </div>
-      <div class="filters" id="shift-filters"></div>
-      <div class="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="shift-prog" style="width:0%"></div></div>
-        <p class="progress-label" id="shift-prog-label"></p>
+
+      <!-- SHIFT TYPE SELECTOR -->
+      <div id="shift-type-selector" style="background:#fff;padding:1.5rem 1rem;border-bottom:1px solid #e5e5e0">
+        <div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Select your shift type</div>
+        <div style="font-size:12px;color:#888;margin-bottom:12px">Only shifts not yet started today are shown</div>
+        <div id="shift-type-buttons" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"></div>
+        <div id="shift-type-message" style="display:none;text-align:center;padding:1rem;color:#888;font-size:14px"></div>
       </div>
-      <div id="shift-task-list"></div>
-      <div class="signoff-panel">
-        <h3>Sign off shift checklist</h3>
-        <div class="field" style="margin-bottom:10px">
-          <label>Manager</label>
-          <div class="sign-name-display" id="shift-sign-name"></div>
-        </div>
-        <div class="field">
-          <label>Date &amp; time</label>
-          <input type="text" id="shift-sign-time" readonly>
-        </div>
-        <button class="signoff-btn" onclick="signOffShift()">✓ Sign off &amp; hand over</button>
-        <div class="signed-box" id="shift-signed-box">
-          <div class="signed-name" id="shift-signed-name"></div>
-          <div class="signed-time" id="shift-signed-time"></div>
-          <div class="signed-note" id="shift-signed-note"></div>
-        </div>
+
+      <!-- SHIFT CONTENT (hidden until type selected) -->
+      <div id="shift-content" style="display:none">
+
+      <!-- Phase tabs -->
+      <div style="display:flex;background:#fff;border-bottom:1px solid #e5e5e0">
+        <button class="shift-phase-btn active" id="phase-btn-pre" onclick="setShiftPhase('pre')">Pre-Shift</button>
+        <button class="shift-phase-btn" id="phase-btn-during" onclick="setShiftPhase('during')">During</button>
+        <button class="shift-phase-btn" id="phase-btn-post" onclick="setShiftPhase('post')">Post-Shift</button>
       </div>
-      <div class="bottom-pad"></div>
+
+      <!-- PRE-SHIFT PHASE -->
+      <div id="shift-phase-pre">
+        <!-- Header fields -->
+        <div style="background:#fff;padding:10px 1rem;border-bottom:1px solid #e5e5e0;display:flex;flex-direction:column;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:3px">Area Leader — Service</div>
+              <input type="text" id="al-service" placeholder="Name" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:3px">Area Leader — Production</div>
+              <input type="text" id="al-production" placeholder="Name" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <!-- SMART Targets -->
+        <div style="background:#fff;margin-top:8px;border-top:1px solid #e5e5e0;border-bottom:1px solid #e5e5e0">
+          <div class="section-header"><span>SMART Shift Targets</span></div>
+          <div style="padding:8px 1rem;display:flex;flex-direction:column;gap:6px">
+            <div id="smart-targets-list"></div>
+          </div>
+        </div>
+
+        <!-- Sales & Labour -->
+        <div style="background:#fff;margin-top:8px;border-top:1px solid #e5e5e0;border-bottom:1px solid #e5e5e0">
+          <div class="section-header"><span>Sales &amp; Labour</span></div>
+          <div style="padding:10px 1rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:3px">Proj. Sales</div>
+              <input type="text" id="proj-sales" placeholder="€0" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:3px">Actual Sales</div>
+              <input type="text" id="actual-sales" placeholder="€0" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:3px">Proj. Labour</div>
+              <input type="text" id="proj-labour" placeholder="%" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-wrap" style="margin-top:8px">
+          <div class="progress-bar"><div class="progress-fill" id="shift-prog" style="width:0%"></div></div>
+          <p class="progress-label" id="shift-prog-label"></p>
+        </div>
+        <div id="shift-task-list"></div>
+
+        <div class="signoff-panel">
+          <h3>Sign off pre-shift</h3>
+          <div class="field" style="margin-bottom:10px">
+            <label>Manager</label>
+            <div class="sign-name-display" id="shift-sign-name"></div>
+          </div>
+          <div class="field">
+            <label>Date &amp; time</label>
+            <input type="text" id="shift-sign-time" readonly>
+          </div>
+          <button class="signoff-btn" onclick="signOffShift()">✓ Sign off &amp; move to During-Shift</button>
+          <div class="signed-box" id="shift-signed-box">
+            <div class="signed-name" id="shift-signed-name"></div>
+            <div class="signed-time" id="shift-signed-time"></div>
+            <div class="signed-note" id="shift-signed-note"></div>
+          </div>
+        </div>
+        <div class="bottom-pad"></div>
+      </div>
+
+      <!-- DURING-SHIFT PHASE -->
+      <div id="shift-phase-during" style="display:none">
+        <div style="background:#fff;padding:1rem;border-bottom:1px solid #e5e5e0">
+          <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:10px">
+            Complete a <strong>quick travel path (3–5 mins) every 30 minutes</strong>. Observe and coach staff on hospitality, service and production procedures.
+          </div>
+          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Travel Path Checklist</div>
+          <div id="travel-path-list"></div>
+        </div>
+        <!-- 30-min timeline -->
+        <div style="background:#fff;margin-top:8px;border-top:1px solid #e5e5e0;border-bottom:1px solid #e5e5e0">
+          <div class="section-header"><span>30-min Travel Path Log</span><span id="travel-path-count">0 completed</span></div>
+          <div style="padding:10px 1rem">
+            <button onclick="logTravelPath()" style="width:100%;padding:11px;border-radius:8px;background:#d4000a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">✓ Travel path completed</button>
+          </div>
+          <div id="travel-path-log"></div>
+        </div>
+        <!-- During shift notes -->
+        <div style="background:#fff;margin-top:8px;border-top:1px solid #e5e5e0;padding:1rem">
+          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Notes</div>
+          <textarea id="during-notes" rows="4" placeholder="Notes during the shift..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+        </div>
+        <div class="bottom-pad"></div>
+      </div>
+
+      <!-- POST-SHIFT PHASE -->
+      <div id="shift-phase-post" style="display:none">
+        <div class="progress-wrap" style="margin-top:8px">
+          <div class="progress-bar"><div class="progress-fill" id="post-shift-prog" style="width:0%"></div></div>
+          <p class="progress-label" id="post-shift-prog-label"></p>
+        </div>
+        <div id="post-shift-task-list"></div>
+        <!-- Post-shift reflection -->
+        <div style="background:#fff;margin-top:8px;border-top:1px solid #e5e5e0;padding:1rem">
+          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Post-Shift Reflection</div>
+          <div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.5">What went well today? Is there anything you would like to do better next time? What did you learn today?</div>
+          <textarea id="post-reflection" rows="5" placeholder="Write your reflection here..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+        </div>
+        <div class="signoff-panel">
+          <h3>Sign off post-shift</h3>
+          <div class="field" style="margin-bottom:10px">
+            <label>Manager</label>
+            <div class="sign-name-display" id="post-sign-name"></div>
+          </div>
+          <div class="field">
+            <label>Date &amp; time</label>
+            <input type="text" id="post-sign-time" readonly>
+          </div>
+          <button class="signoff-btn" onclick="signOffPostShift()">✓ Complete shift &amp; hand over</button>
+          <div class="signed-box" id="post-signed-box" style="display:none">
+            <div class="signed-name" id="post-signed-name"></div>
+            <div class="signed-time" id="post-signed-time"></div>
+            <div class="signed-note" id="post-signed-note"></div>
+          </div>
+        </div>
+        <div class="bottom-pad"></div>
+      </div>
+      </div><!-- end shift-content -->
     </div>
 
     <!-- PAGE: TO-DO LIST -->
     <div class="page" id="page-todo">
       <div class="page-header">
         <h2>To-do list <span id="todo-count-header"></span></h2>
-        <p>Tasks carried forward from previous shifts</p>
+        <p id="todo-subheader">Tasks flagged during pre-shift</p>
       </div>
       <div id="todo-list"></div>
+      <!-- Add task button -->
+      <div style="margin:8px 12px 0">
+        <button onclick="toggleAddTodoPanel()" style="width:100%;padding:11px;border-radius:10px;border:1px solid #ddd;background:#fff;font-size:14px;color:#555;cursor:pointer;font-family:inherit">+ Add task to to-do list</button>
+        <div id="add-todo-panel" style="display:none;background:#fff;border-radius:10px;border:1px solid #e5e5e0;margin-top:8px;overflow:hidden">
+          <div style="padding:10px 1rem;background:#eeeee8;font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.07em">New task</div>
+          <div style="padding:12px 1rem;display:flex;flex-direction:column;gap:8px">
+            <input type="text" id="add-todo-name" placeholder="Task description..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+            <div style="display:flex;gap:6px;align-items:center">
+              <span style="font-size:12px;color:#888;font-weight:500">Priority:</span>
+              <div id="add-todo-pri-buttons" style="display:flex;gap:4px">
+                <button id="add-todo-pri-a" onclick="selectAddTodoPriority('a')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">A</button>
+                <button id="add-todo-pri-b" onclick="selectAddTodoPriority('b')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">B</button>
+                <button id="add-todo-pri-c" onclick="selectAddTodoPriority('c')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">C</button>
+                <button id="add-todo-pri-d" onclick="selectAddTodoPriority('d')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">D</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="confirmAddTodo()" style="flex:1;padding:10px;border-radius:8px;background:#1D9E75;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Add task</button>
+              <button onclick="document.getElementById('add-todo-panel').style.display='none'" style="padding:10px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#888">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="bottom-pad"></div>
     </div>
 
@@ -317,10 +482,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <div id="breaks-list"></div>
 
-      <div style="margin:12px">
-        <button onclick="testBreakSheetPush()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;color:#888;cursor:pointer;font-family:inherit">🧪 Test — push break sheet to Google Sheets now</button>
-        <div id="breaks-push-status" style="font-size:12px;text-align:center;margin-top:6px;color:#888"></div>
+      <!-- Add extra staff -->
+      <div id="breaks-add-panel" style="display:none;margin:0 12px 12px;background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
+        <div style="padding:10px 1rem;background:#eeeee8;font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.07em">Add extra staff member</div>
+        <div style="padding:12px 1rem;display:flex;flex-direction:column;gap:10px">
+          <input type="text" id="add-staff-name" placeholder="Name" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:#888;font-weight:500;display:block;margin-bottom:3px">Start time</label>
+              <input type="time" id="add-staff-start" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#888;font-weight:500;display:block;margin-bottom:3px">End time</label>
+              <input type="time" id="add-staff-end" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="confirmAddExtraStaff()" style="flex:1;padding:10px;border-radius:8px;background:#1D9E75;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Add to break sheet</button>
+            <button onclick="document.getElementById('breaks-add-panel').style.display='none'" style="padding:10px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#888">Cancel</button>
+          </div>
+        </div>
       </div>
+
+      <button id="breaks-add-btn" onclick="toggleAddStaffPanel()" style="display:none;margin:0 12px 12px;width:calc(100% - 24px);padding:11px;border-radius:10px;border:1px solid #ddd;background:#fff;font-size:14px;color:#555;cursor:pointer;font-family:inherit">+ Add extra staff member</button>
 
       <div class="bottom-pad"></div>
     </div>
@@ -355,88 +539,103 @@ const MANAGERS = {
   "John Quirke":   "5081"
 };
 
+// PRE-SHIFT tasks — area, name, priority (a/b/c/d)
 const SHIFT_TASKS = [
-  // Office
-  {area:"Office", name:"Read managers' diary, check email (ops update) and read any print out in document holder"},
-  {area:"Office", name:"Review Training Plan and complete as required"},
-  {area:"Office", name:"Check projected sales and GCs — busiest hour and tightest hour for labour (check LifeLens to manage breaks)"},
-  {area:"Office", name:"Log in to BrandMate to make sure all DFS checks are completed. Review Product Outage tool and action"},
-  {area:"Office", name:"Review any open eTech tickets and IT tickets"},
-  {area:"Office", name:"Safe counted (or assigned)"},
-  // Outside
-  {area:"Outside", name:"Patio area clean, bins ok and tables wiped down if wet from rain"},
-  {area:"Outside", name:"Car park free of litter, leaves and stones"},
-  {area:"Outside", name:"Review speaker for order being checked on screen, and booth 1 doing order–order–cash"},
-  {area:"Outside", name:"Walk through DT — check signs, windows and screens for cleanliness"},
-  // Dining Area
-  {area:"Dining Area", name:"Check cleanliness (entry grate, entry mat, corners, window sills, floors, baseboards, highchairs, floor signs, seating, decor, lights)"},
-  {area:"Dining Area", name:"KIOSK printers working with printer roll stocked"},
-  {area:"Dining Area", name:"KIOSKs table service on and enough tent cards"},
-  {area:"Dining Area", name:"Ensure atmosphere is good — music, lighting and HVAC all ok"},
-  {area:"Dining Area", name:"Check cleanliness and BWS of: condiments bar, bin and Keeko board"},
-  {area:"Dining Area", name:"Customers toilets cleaned and stocked (soap, toilet paper) with flush and hot tap working. No TP left out"},
-  // Crew Area
-  {area:"Crew Area, Stock Room & Bins", name:"Crew room tidy and clean. Belongings away in lockers/stools. Nothing on top of lockers"},
-  {area:"Crew Area, Stock Room & Bins", name:"Crew toilets are clean (hairnets/masks/shoes) and stocked up (soap, toilet paper). No TP left out"},
-  {area:"Crew Area, Stock Room & Bins", name:"Hallway is tidy (cardboard, bin bags). Buns in correct place. No water left in mop buckets. AED battery ok"},
-  {area:"Crew Area, Stock Room & Bins", name:"Stockroom has all boxes closed or covered, no stock on the floor or bare shelf"},
-  {area:"Crew Area, Stock Room & Bins", name:"Drink BIB Area stocked and clean (no caps/cardboard under Multiplex unit). All stock room as per Map"},
-  // Corral
-  {area:"Corral & Bin Area", name:"Ops unit stocked and tidy as per Map. Back door closed and alarmed"},
-  {area:"Corral & Bin Area", name:"Cages/wheels in order with bun trays stacked correctly by colour"},
-  {area:"Corral & Bin Area", name:"Correct bins in use with compactor up and bin lids closed. In bin area, bins fully closed (birds) and door locked"},
-  // Freezer/Chiller
-  {area:"Main Freezer & Chiller", name:"Maintain at correct temperature"},
-  {area:"Main Freezer & Chiller", name:"All primary shelf lifes in date"},
-  {area:"Main Freezer & Chiller", name:"All secondary shelf lifes in date"},
-  {area:"Main Freezer & Chiller", name:"No stock on the floor or out of boxes. All products as per Map"},
-  {area:"Main Freezer & Chiller", name:"3cm gap between stacks, 5cm gap between cases and walls, 15cm gap to ceiling, 30cm gap around evaporator. Beef away from door"},
-  {area:"Main Freezer & Chiller", name:"Follow stacking procedure (5x5 fry boxes)"},
-  // Back Sink
-  {area:"Back Sink", name:"All clothes fully submerged in sanitizer and lukewarm water with timers and strips in place"},
-  {area:"Back Sink", name:"Back sink clean and organised. Grease trap emptied"},
-  {area:"Back Sink", name:"All chemicals properly stocked, diluted and labeled — enough chemical packets stocked for day as per BWS"},
-  {area:"Back Sink", name:"Washing machine and dishwasher cleaned and working fine"},
-  // DT Booths/MFY
-  {area:"DT Booths / MFY", name:"Booth 1 clean with headsets working, batteries charged, note checker and coin cannister in use — check BWS"},
-  {area:"DT Booths / MFY", name:"Booth 2 stocked and clean with printer roll stocked — check BWS"},
-  {area:"DT Booths / MFY", name:"Ensure sufficient IPs prepared for volume"},
-  {area:"DT Booths / MFY", name:"Grills are clean (tools/cloths as per BWS) and working (in standby when not in use) — BB Procedures being followed"},
-  {area:"DT Booths / MFY", name:"Toasters are clean (check behind) with correct compression setting (B3)"},
-  {area:"DT Booths / MFY", name:"UHCs and trays are clean (4 hour timer) with e-production working and being followed (adjust if needed)"},
-  {area:"DT Booths / MFY", name:"Ovens, Microwave and Steamers are clean"},
-  {area:"DT Booths / MFY", name:"Freezers and Chillers are clean and stocked up with glove holders in place"},
-  {area:"DT Booths / MFY", name:"Dressing table is clean and stocked up at 10am as per BWS guide. No random equipment below"},
-  {area:"DT Booths / MFY", name:"Under table: Veggie Deluxe, Veggie Wrap, McPlant / Salad Boxes, Cheese Tempering, Extra Clams / Wrap Boxes"},
-  {area:"DT Booths / MFY", name:"Dressing table timer system in place and followed"},
-  {area:"DT Booths / MFY", name:"Hand wash, change cloth & glove timer set and activated"},
-  {area:"DT Booths / MFY", name:"Tempering in place as per BLC (printed daily)"},
-  {area:"DT Booths / MFY", name:"All use by dates and secondary timers are all in date and rotated (FIFO)"},
-  {area:"DT Booths / MFY", name:"Fry Vats are working, clean and stocked up (2 accu salt, 2 scoops and 2 dividers in place — all bulbs working) — BWS"},
-  {area:"DT Booths / MFY", name:"Handwashing sink is fully stocked (soap, kitchen roll) and not obstructed"},
-  // Beverage Cell
-  {area:"Beverage Cell", name:"Coffee machine cleanliness and coffee bean levels below lines — set up as per BWS"},
-  {area:"Beverage Cell", name:"SM and BIM all set up correctly with secondary shelf lifes in place and in date as per BWS"},
-  {area:"Beverage Cell", name:"Flurry dispensers set up correctly with relevant colour trays with secondary shelf lifes in place and in date"},
-  {area:"Beverage Cell", name:"Enough flurry spindles stocked in square clear pot, with black pot set up with 2hr SSL. Flurry freezer in use"},
-  {area:"Beverage Cell", name:"FC chiller set up as per BWS guide"},
-  {area:"Beverage Cell", name:"ABS stocked and fully functioning"},
-  {area:"Beverage Cell", name:"Sweet snacks: wrapped and stickered correctly, secondary shelf life in date and correct amount as per BLC"},
-  {area:"Beverage Cell", name:"Ensure BOAT is oriented correctly Breakfast/Main Menu and Beverage Bundler is in use (DT shelf, IS shelf)"},
-  {area:"Beverage Cell", name:"Dry stock levels — get stock as per BWS"},
-  // Service
-  {area:"Service", name:"Under counter trolleys are all clean, organized and stocked up as per BWS"},
-  {area:"Service", name:"Tills working fine with printer roll stocked"},
-  {area:"Service", name:"Table Service aprons clean, stocked and being worn by all service staff (remind TS/DA staff about CSAT surveys). Hi vis PF"},
-  {area:"Service", name:"OAT stocked up with lamps and printers working"},
-  // General
-  {area:"General", name:"Communicate with previous shift manager to handover shift — discuss plan with Area Leaders too"},
-  {area:"General", name:"Set and communicate the targets with your team (every hour on Speed of Service and KVS Sheet)"},
-  {area:"General", name:"All stations have red cloths in pots and staff aware of secondary responsibilities"},
-  {area:"General", name:"Log any IT issues and inform Mgmt of any Equipment issues"},
-  {area:"General", name:"All stations set up with no mess/wrong equipment around them (inc tape, kitchen roll, stainless steel, gloves etc)"},
-  {area:"General", name:"Check staff appearance (sock check, snood, hair net etc)"},
+  // 1. Admin
+  {area:"1. Admin & Office",name:"Check restaurant email & intranet for Ops Updates / bulletins",priority:"b"},
+  {area:"1. Admin & Office",name:"Review sales projections & channel split data",priority:"b"},
+  {area:"1. Admin & Office",name:"Have a handover conversation with the previous Shift Leader",priority:"a"},
+  {area:"1. Admin & Office",name:"Check Product Outage Tool for any items not on sale and action",priority:"a"},
+  {area:"1. Admin & Office",name:"Review Planned Daily Maintenance Calendar & plan required tasks",priority:"c"},
+  {area:"1. Admin & Office",name:"Check for open eTech or ITSC tickets & planned engineer visits",priority:"c"},
+  {area:"1. Admin & Office",name:"Wi-Fi, music, lighting & air conditioning settings reviewed",priority:"d"},
+  {area:"1. Admin & Office",name:"Count the safe & ensure cash procedures are in place",priority:"a"},
+  // 2. People
+  {area:"2. People",name:"Review previously completed Floor Plan & assign Area Leaders",priority:"b"},
+  {area:"2. People",name:"Meet & greet the team with energy and positivity",priority:"b"},
+  {area:"2. People",name:"Set & Communicate SMART Shift Targets with Area Leaders & Crew",priority:"b"},
+  {area:"2. People",name:"Plan for Crew engagement, motivation or competition",priority:"c"},
+  {area:"2. People",name:"Plan for Learning & Development: Check Crew Trainers have all they need",priority:"c"},
+  {area:"2. People",name:"Inform the team of any promotions or product outages",priority:"b"},
+  {area:"2. People",name:"Check uniform policy, appearance & hygiene standards are followed",priority:"b"},
+  {area:"2. People",name:"Check all employees follow the footwear guidance",priority:"b"},
+  {area:"2. People",name:"Check all employees adhere to Fitness to Work regulations",priority:"a"},
+  // 3. Exterior
+  {area:"3. Exterior, Corral & Drive Thru",name:"Approach, car park & surrounding areas are litter-free",priority:"b"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Rubbish bins are clean & not overflowing",priority:"b"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Restaurant & carpark lighting / Sky Sign is on/off according to daypart",priority:"d"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Corral — door secure. Bins & waste barrels have lids & clean. No signs of pests",priority:"a"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Drive Thru lane, landscaping, menu boards / displays are clean & tidy",priority:"b"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Drive Thru Cashier, Presenter and Fast Forward booths are clean & tidy",priority:"b"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Outdoor furniture & signage are clean / in good condition",priority:"d"},
+  {area:"3. Exterior, Corral & Drive Thru",name:"Windows, doors, floors, customer displays are clean / in good condition",priority:"b"},
+  // 4. Dining Area
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Customer entry mats in place & clean",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Wet floor signs available & in use when appropriate",priority:"a"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Customer areas clean & tidy: tables, chairs, highchairs, floors, trays",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Correct cleaning materials are used & not visible to customers",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Table Service is on & tents are available at Kiosks / Tills",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Digital Display Screens / posters are clean & in working order",priority:"d"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Kiosks are clean & working correctly: screens, printers",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Beverage / Condiment Bar is clean & stocked. No signs of pests",priority:"a"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Waste / recycling units are clean & not overflowing. No signs of pests",priority:"b"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Toilets are clean. Soap, toilet paper & hand dryers are working",priority:"a"},
+  {area:"4. Customer Dining Area, Kiosks & Toilets",name:"Mag lock / door — operational",priority:"a"},
+  // 5. Service
+  {area:"5. Service, Beverage & Drive Thru",name:"Check in with Area Leader — people positioning, set priorities & targets",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"Floors clean & free from spills & rubbish. No signs of pests",priority:"a"},
+  {area:"5. Service, Beverage & Drive Thru",name:"Handwashing & cloths procedures are followed",priority:"a"},
+  {area:"5. Service, Beverage & Drive Thru",name:"High-vis vests available for Click & Serve / Pull Forward runners",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"DT: Order Takers focus on the customer; pulling forward when needed",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"Front / Click & Serve: stocked condiment aprons worn by all service staff",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"McDelivery: bagging procedures & accuracy checks are followed",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"Equipment & technology set up & stocked correctly (delivery tablets, printers)",priority:"b"},
+  {area:"5. Service, Beverage & Drive Thru",name:"Courier Waiting Room / Courier Area clean & tidy",priority:"b"},
+  // 6. Production
+  {area:"6. Production / Kitchen",name:"Check in with Area Leader — people positioning, set priorities & targets",priority:"b"},
+  {area:"6. Production / Kitchen",name:"Digital Food Safety (DFS) has been completed",priority:"a"},
+  {area:"6. Production / Kitchen",name:"Handwashing & cloth procedures are followed",priority:"a"},
+  {area:"6. Production / Kitchen",name:"All food items are rotated, covered & have secondary shelf lives",priority:"a"},
+  {area:"6. Production / Kitchen",name:"Equipment turned on/off according to fire-up / fire-down schedule",priority:"b"},
+  {area:"6. Production / Kitchen",name:"Fry Station, Vats, Grills & other equipment — clean & correct settings",priority:"b"},
+  {area:"6. Production / Kitchen",name:"Appropriate number of IPs — set up & in use. eProduction is being followed",priority:"b"},
+  {area:"6. Production / Kitchen",name:"Prep Table switched on & stocked according to Be Well Served Guides",priority:"b"},
+  {area:"6. Production / Kitchen",name:"Defrosting & Tempering in place according to Build to Charts",priority:"a"},
+  // 7. Stock Room
+  {area:"7. Stock Room, Crew Room & Office",name:"Drinks machine / Multiplex (BIB) stocked and clean",priority:"b"},
+  {area:"7. Stock Room, Crew Room & Office",name:"Back Room and stock areas clean & tidy. Correct cleaning supplies in use",priority:"c"},
+  {area:"7. Stock Room, Crew Room & Office",name:"Walkways and Fire Exits are clear. Back Door Policy is followed",priority:"a"},
+  {area:"7. Stock Room, Crew Room & Office",name:"Crew areas & Manager Office are clean & tidy and not used as storage",priority:"c"},
 ];
+
+// POST-SHIFT tasks
+const POST_SHIFT_TASKS = [
+  {name:"Prepare the restaurant for Shift changeover"},
+  {name:"Handover the safe, following correct cash handling procedures"},
+  {name:"Compare results to targets"},
+  {name:"Talk with the next Shift Leader & resolve pending issues"},
+  {name:"Provide recognition and feedback to Crew and Area Leaders"},
+  {name:"Review the next Shift's schedule and stock levels"},
+  {name:"Log any eTech / ITSC call outs. Check PM tasks are completed"},
+  {name:"Waste counted / entered. Transfers entered. Tills cashed up"},
+  {name:"Check that DFS is completed / checked"},
+  {name:"Complete Post-Shift Reflection"},
+];
+
+// TRAVEL PATH checklist items (during shift)
+const TRAVEL_PATH_ITEMS = [
+  "Exterior — no litter, bins clean, outdoor furniture clean, windows & signage clean",
+  "Corral — door secure, bins closed, litter & odour-free, no signs of pest activity",
+  "Drive Thru (external) — lane, menu boards, displays, booths clean & tidy",
+  "Dining Area — floor, tables, chairs, bins clean; condiment bar stocked",
+  "Toilets — clean & odour-free, toilet paper, hand soap and hand dryer stocked & working",
+  "Front Counter / Delivery / DT — floor & equipment clean, enough stock, operations procedures followed",
+  "Crew Appearance & Hygiene — uniform & hygiene policies followed, handwashing & cloth procedures followed",
+  "Production — floor & equipment clean, eProduction / UHC levels followed, SSLs and stock rotation followed",
+  "Back Areas — clean & tidy, floor dry, walkways & exits clear, stockrooms & back door locked",
+];
+
+
 
 // freq: daily|twice-weekly|weekly|fortnightly|monthly|quarterly|annually|every-2-months|other
 // days: array of JS day numbers (0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat)
@@ -572,6 +771,8 @@ function todayKey() {
 }
 
 // ─── LOGIN ──────────────────────────────────────────────────────────
+const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in ms
+
 function doLogin() {
   const name = document.getElementById('manager-select').value;
   const pin  = document.getElementById('pin-input').value;
@@ -580,6 +781,10 @@ function doLogin() {
   if (pin !== MANAGERS[name])   { err.style.display='block'; err.textContent='Incorrect PIN. Please try again.'; return; }
   err.style.display='none';
   currentManager = name;
+  // Save session to localStorage
+  const s = getState();
+  s.session = { manager: name, loginTime: Date.now() };
+  saveState(s);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   document.getElementById('top-bar-user').textContent = name;
@@ -590,6 +795,9 @@ document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key
 
 function doLogout() {
   currentManager = null;
+  const s = getState();
+  delete s.session;
+  saveState(s);
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('pin-input').value='';
@@ -603,6 +811,8 @@ function initApp() {
   if (saved.breakSchedule && saved.breakDays && saved.breakDays.length > 0) {
     breakSchedule = saved.breakSchedule;
     breakDays = saved.breakDays;
+    if (saved.breakChecked) breakChecked = saved.breakChecked;
+    removePastBreakDays();
     const now = new Date();
     const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
     const todayNum = now.getDate();
@@ -611,6 +821,7 @@ function initApp() {
       || breakDays[0];
     document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
     document.getElementById('breaks-day-selector').style.display = 'block';
+    document.getElementById('breaks-add-btn').style.display = 'block';
     renderBreakDaySelector();
     renderBreakSheet();
   }
@@ -620,6 +831,13 @@ function initApp() {
   setInterval(renderToilet, 60000);
   setInterval(checkToiletAlert, 30000);
   setInterval(checkBreakSheetAlerts, 60000); // check midnight reminder and 2am push
+  // Refresh session timestamp every 5 minutes while active
+  setInterval(() => {
+    if (currentManager) {
+      const s = getState();
+      if (s.session) { s.session.loginTime = Date.now(); saveState(s); }
+    }
+  }, 5 * 60 * 1000);
   checkToiletAlert();
   buildShiftFilters();
   buildCleaningFilters();
@@ -627,6 +845,7 @@ function initApp() {
   renderTodo();
   renderCleaning();
   renderToilet();
+  restoreShiftType();
   showPage('shift');
 }
 
@@ -638,6 +857,10 @@ function updateDateTime() {
   updateCleaningDateLabel();
   document.getElementById('shift-sign-time').value = ts;
   document.getElementById('shift-sign-name').textContent = currentManager || '';
+  if (document.getElementById('post-sign-time')) {
+    document.getElementById('post-sign-time').value = ts;
+    document.getElementById('post-sign-name').textContent = currentManager || '';
+  }
 
   // shift tag
   const h = now.getHours();
@@ -660,27 +883,173 @@ function showPage(page) {
 }
 
 // ─── SHIFT CHECKLIST ────────────────────────────────────────────────
-let shiftFilter = 'all';
+let currentShiftPhase = 'pre';
+let currentShiftType = null; // 'open' | 'day' | 'close'
+const SHIFT_ICONS = { open: '🌅', day: '☀️', close: '🌙' };
 
-function buildShiftFilters() {
-  const areas = [...new Set(SHIFT_TASKS.map(t=>t.area))];
-  let html = `<button class="filter-btn active" onclick="setShiftFilter('all',this)">All</button>`;
-  areas.forEach(a => {
-    html += `<button class="filter-btn" onclick="setShiftFilter('${a.replace(/'/g,"\\'")}',this)">${a}</button>`;
-  });
-  document.getElementById('shift-filters').innerHTML = html;
+function getCompletedShiftTypes() {
+  // Returns set of shift types already signed off today
+  const s = getState();
+  return new Set((s.completedShiftTypes && s.completedShiftTypes[todayKey()]) || []);
 }
 
-function setShiftFilter(area, btn) {
-  shiftFilter = area;
-  document.querySelectorAll('#shift-filters .filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+function renderShiftTypeSelector() {
+  const completed = getCompletedShiftTypes();
+  const all = ['open', 'day', 'close'];
+  const available = all.filter(t => !completed.has(t));
+  const btnContainer = document.getElementById('shift-type-buttons');
+  const msgEl = document.getElementById('shift-type-message');
+
+  if (available.length === 0) {
+    btnContainer.style.display = 'none';
+    msgEl.style.display = 'block';
+    msgEl.innerHTML = '✅ All shifts completed today. No more shifts to start.';
+    return;
+  }
+
+  btnContainer.style.display = 'grid';
+  msgEl.style.display = 'none';
+  btnContainer.innerHTML = available.map(type => `
+    <button onclick="selectShiftType('${type}')" style="padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#555;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="font-size:22px">${SHIFT_ICONS[type]}</span>${type.charAt(0).toUpperCase()+type.slice(1)}
+    </button>`).join('');
+
+  // Show completed shifts as greyed out
+  const done = all.filter(t => completed.has(t));
+  if (done.length > 0) {
+    btnContainer.innerHTML += done.map(type => `
+      <button disabled style="padding:14px 8px;border-radius:10px;border:2px solid #eee;background:#f5f5f0;cursor:default;font-family:inherit;font-size:13px;font-weight:600;color:#ccc;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.6">
+        <span style="font-size:22px">${SHIFT_ICONS[type]}</span>${type.charAt(0).toUpperCase()+type.slice(1)} ✓
+      </button>`).join('');
+  }
+}
+
+function selectShiftType(type) {
+  currentShiftType = type;
+  // Save per-manager current shift type for this session
+  const s = getState();
+  if (!s.activeShift) s.activeShift = {};
+  s.activeShift[currentManager] = { type, date: todayKey() };
+  saveState(s);
+  // Update header tag
+  const tag = document.getElementById('shift-tag-label');
+  tag.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+  tag.className = 'shift-tag shift-' + (type === 'open' ? 'open' : type === 'day' ? 'mid' : 'close');
+  // Show checklist, hide selector
+  document.getElementById('shift-type-selector').style.display = 'none';
+  document.getElementById('shift-content').style.display = 'block';
+  setShiftPhase('pre');
   renderShift();
+  renderSmartTargets();
+}
+
+function restoreShiftType() {
+  const s = getState();
+  // Check if this manager has an active shift today
+  if (s.activeShift && s.activeShift[currentManager]) {
+    const active = s.activeShift[currentManager];
+    if (active.date === todayKey()) {
+      selectShiftType(active.type);
+      return;
+    }
+  }
+  // Otherwise show the selector with available shifts
+  renderShiftTypeSelector();
+}
+
+function setShiftPhase(phase) {
+  currentShiftPhase = phase;
+  ['pre','during','post'].forEach(p => {
+    document.getElementById('shift-phase-' + p).style.display = p === phase ? 'block' : 'none';
+    document.getElementById('phase-btn-' + p).classList.toggle('active', p === phase);
+  });
+  if (phase === 'post') renderPostShift();
+}
+
+function buildShiftFilters() {
+  // No longer needed — areas are built into renderShift
+  renderShift();
+  renderSmartTargets();
+  renderTravelPath();
+  renderPostShift();
+}
+
+function renderSmartTargets() {
+  let html = '';
+  for (let i = 1; i <= 4; i++) {
+    const s = getState();
+    const val = s.smartTargets && s.smartTargets[todayKey()] ? (s.smartTargets[todayKey()][i] || '') : '';
+    html += `<div class="smart-row">
+      <div class="smart-num">${i}</div>
+      <input class="smart-input" type="text" value="${val.replace(/"/g,'&quot;')}" placeholder="Enter target ${i}..." onchange="saveSmartTarget(${i}, this.value)">
+    </div>`;
+  }
+  document.getElementById('smart-targets-list').innerHTML = html;
+}
+
+function saveSmartTarget(num, val) {
+  const s = getState();
+  if (!s.smartTargets) s.smartTargets = {};
+  if (!s.smartTargets[todayKey()]) s.smartTargets[todayKey()] = {};
+  s.smartTargets[todayKey()][num] = val;
+  saveState(s);
+}
+
+function renderTravelPath() {
+  let html = '';
+  TRAVEL_PATH_ITEMS.forEach((item, i) => {
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f0">
+      <div style="width:18px;height:18px;border-radius:50%;background:#d4000a;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+      <div style="font-size:13px;color:#555;line-height:1.4">${item}</div>
+    </div>`;
+  });
+  document.getElementById('travel-path-list').innerHTML = html;
+
+  // Restore log
+  const s = getState();
+  travelPathLog = (s.travelPathLog && s.travelPathLog[todayKey()]) || [];
+  renderTravelPathLog();
+}
+
+function logTravelPath() {
+  const ts = new Date().toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'});
+  travelPathLog.push({ time: ts, manager: currentManager });
+  const s = getState();
+  if (!s.travelPathLog) s.travelPathLog = {};
+  s.travelPathLog[todayKey()] = travelPathLog;
+  saveState(s);
+  renderTravelPathLog();
+}
+
+function renderTravelPathLog() {
+  document.getElementById('travel-path-count').textContent = travelPathLog.length + ' completed';
+  if (travelPathLog.length === 0) {
+    document.getElementById('travel-path-log').innerHTML = '<div class="empty-state" style="padding:1rem">No travel paths logged yet</div>';
+    return;
+  }
+  let html = '';
+  [...travelPathLog].reverse().forEach(entry => {
+    html += `<div class="travel-log-row">
+      <span class="travel-log-time">${entry.time}</span>
+      <span class="travel-log-who">${entry.manager}</span>
+    </div>`;
+  });
+  document.getElementById('travel-path-log').innerHTML = html;
 }
 
 function getShiftChecked() {
   const s = getState();
   return s.shiftChecked && s.shiftChecked[todayKey()] ? new Set(s.shiftChecked[todayKey()]) : new Set();
+}
+
+function getShiftPriorities() {
+  const s = getState();
+  return (s.shiftPriorities && s.shiftPriorities[todayKey()]) || {};
+}
+
+function getShiftNotes() {
+  const s = getState();
+  return (s.shiftNotes && s.shiftNotes[todayKey()]) || {};
 }
 
 function toggleShiftTask(name) {
@@ -689,86 +1058,304 @@ function toggleShiftTask(name) {
   if (!s.shiftChecked[todayKey()]) s.shiftChecked[todayKey()] = [];
   const arr = s.shiftChecked[todayKey()];
   const idx = arr.indexOf(name);
-  if (idx > -1) arr.splice(idx,1); else arr.push(name);
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  } else {
+    arr.push(name);
+    // Clear any priority when ticked as done
+    if (s.shiftPriorities && s.shiftPriorities[todayKey()]) {
+      delete s.shiftPriorities[todayKey()][name];
+    }
+  }
   saveState(s);
   renderShift();
   renderTodo();
 }
 
+function setShiftTaskPriority(name, priority) {
+  const s = getState();
+  // Untick if ticked
+  if (s.shiftChecked && s.shiftChecked[todayKey()]) {
+    const arr = s.shiftChecked[todayKey()];
+    const idx = arr.indexOf(name);
+    if (idx > -1) arr.splice(idx, 1);
+  }
+  if (!s.shiftPriorities) s.shiftPriorities = {};
+  if (!s.shiftPriorities[todayKey()]) s.shiftPriorities[todayKey()] = {};
+  // Toggle off if same priority clicked again
+  if (s.shiftPriorities[todayKey()][name] === priority) {
+    delete s.shiftPriorities[todayKey()][name];
+  } else {
+    s.shiftPriorities[todayKey()][name] = priority;
+  }
+  saveState(s);
+  renderShift();
+  renderTodo();
+}
+
+function saveShiftTaskNote(name, note) {
+  const s = getState();
+  if (!s.shiftNotes) s.shiftNotes = {};
+  if (!s.shiftNotes[todayKey()]) s.shiftNotes[todayKey()] = {};
+  if (note.trim()) {
+    s.shiftNotes[todayKey()][name] = note.trim();
+  } else {
+    delete s.shiftNotes[todayKey()][name];
+  }
+  saveState(s);
+}
+
+function toggleShiftTaskNote(name) {
+  // Toggle note input visibility by re-rendering with showNote flag
+  const key = 'shift_shownote_' + name;
+  window[key] = !window[key];
+  renderShift();
+}
+
 function renderShift() {
-  const checked = getShiftChecked();
-  const filtered = shiftFilter==='all' ? SHIFT_TASKS : SHIFT_TASKS.filter(t=>t.area===shiftFilter);
-  const areas = [...new Set(filtered.map(t=>t.area))];
+  const checked    = getShiftChecked();
+  const priorities = getShiftPriorities();
+  const notes      = getShiftNotes();
+  const areas      = [...new Set(SHIFT_TASKS.map(t=>t.area))];
   let html = '';
+
+  const priColors = {a:'#FCEBEB',b:'#FAEEDA',c:'#E6F1FB',d:'#f0f0ec'};
+  const priText   = {a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'};
+
   areas.forEach(area => {
-    const items = filtered.filter(t=>t.area===area);
-    const done = items.filter(t=>checked.has(t.name)).length;
+    const items = SHIFT_TASKS.filter(t=>t.area===area);
+    const done  = items.filter(t=>checked.has(t.name) || priorities[t.name]).length;
     html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
     items.forEach(t => {
-      const isDone = checked.has(t.name);
-      const safe = t.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += `<div class="task-row${isDone?' done':''}" onclick="toggleShiftTask('${safe}')">
+      const isDone   = checked.has(t.name);
+      const taskPri  = priorities[t.name] || null;
+      const taskNote = notes[t.name] || '';
+      const showNote = window['shift_shownote_' + t.name] || false;
+      const safe     = t.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const safeNote = taskNote.replace(/"/g,'&quot;');
+      const isActioned = isDone || taskPri;
+
+      // Compact A/B/C/D + note buttons on the right
+      const priButtonsHtml = !isDone ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:3px">
+          ${['a','b','c','d'].map(p => `<button onclick="setShiftTaskPriority('${safe}','${p}')"
+            style="width:22px;height:22px;border-radius:4px;border:1.5px solid ${taskPri===p?({a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'}[p]):'#ddd'};
+            background:${taskPri===p?priColors[p]:'#fff'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;
+            color:${taskPri===p?priText[p]:'#bbb'}">${p.toUpperCase()}</button>`).join('')}
+        </div>
+        <button onclick="toggleShiftTaskNote('${safe}')"
+          style="font-size:10px;padding:2px 7px;border-radius:4px;border:1.5px solid #ddd;
+          background:${taskNote?'#EAF3DE':'#fff'};cursor:pointer;font-family:inherit;color:#888;white-space:nowrap">${taskNote?'📝 note':'+ note'}</button>
+      </div>` : '';
+
+      const noteInputHtml = showNote ? `
+        <div style="display:flex;gap:6px;padding:6px 1rem 8px;background:#fff;border-bottom:1px solid #f0f0ec" onclick="event.stopPropagation()">
+          <input type="text" value="${safeNote}" placeholder="Add a note..."
+            id="shiftnote_${safe.replace(/[^a-z0-9]/gi,'_')}"
+            style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+          <button onclick="saveShiftTaskNote('${safe}',document.getElementById('shiftnote_${safe.replace(/[^a-z0-9]/gi,'_')}').value);window['shift_shownote_${safe}']=false;renderShift()"
+            style="padding:6px 10px;border-radius:6px;background:#1D9E75;color:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit">Save</button>
+        </div>` : (taskNote && !isDone ? `<div style="padding:2px 1rem 8px;font-size:12px;color:#888;background:#fff;border-bottom:1px solid #f0f0ec">📝 ${taskNote}</div>` : '');
+
+      const rowBg = isDone ? '' : taskPri ? `background:${priColors[taskPri]};border-left:3px solid ${priText[taskPri]}` : '';
+
+      html += `<div class="task-row${isDone?' done':''}" style="${rowBg}" onclick="toggleShiftTask('${safe}')">
         <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
-        <div><div class="task-name">${t.name}</div></div>
-        <span></span>
-      </div>`;
+        <div style="flex:1;min-width:0">
+          <div class="task-name">${t.name}</div>
+        </div>
+        ${priButtonsHtml}
+      </div>${noteInputHtml}`;
     });
   });
+
   document.getElementById('shift-task-list').innerHTML = html;
-  const total = filtered.length;
-  const done  = filtered.filter(t=>checked.has(t.name)).length;
-  const pct   = total ? Math.round(done/total*100) : 0;
+  const total    = SHIFT_TASKS.length;
+  const done     = SHIFT_TASKS.filter(t=>checked.has(t.name)).length;
+  const flagged  = SHIFT_TASKS.filter(t=>!checked.has(t.name) && priorities[t.name]).length;
+  const unactioned = total - done - flagged;
+  const pct      = total ? Math.round((done+flagged)/total*100) : 0;
   document.getElementById('shift-prog').style.width = pct+'%';
-  document.getElementById('shift-prog-label').textContent = `${done} of ${total} tasks completed (${pct}%)`;
+  document.getElementById('shift-prog-label').textContent = `${done} done · ${flagged} flagged · ${unactioned} remaining`;
 }
 
 function signOffShift() {
-  const checked = getShiftChecked();
-  const unchecked = SHIFT_TASKS.filter(t=>!checked.has(t.name));
-  const s = getState();
+  const checked    = getShiftChecked();
+  const priorities = getShiftPriorities();
+  const notes      = getShiftNotes();
+  const s          = getState();
+
+  // Validation — every task must be either ticked or have a priority
+  const unactioned = SHIFT_TASKS.filter(t => !checked.has(t.name) && !priorities[t.name]);
+  if (unactioned.length > 0) {
+    showToast(`⚠ ${unactioned.length} task${unactioned.length>1?'s':''} still need a ✓ or priority`);
+    // Scroll to first unactioned task
+    renderShift();
+    return;
+  }
+
   if (!s.todoList) s.todoList = [];
 
-  // Add unchecked tasks to todo, avoid duplicates
-  unchecked.forEach(t => {
-    const exists = s.todoList.find(td=>td.name===t.name && !td.done);
-    if (!exists) {
-      s.todoList.push({
-        name: t.name,
-        area: t.area,
-        addedBy: currentManager,
-        addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
-        addedDate: todayKey(),
-        done: false,
-        doneBy: null,
-        doneAt: null
-      });
+  // Add tasks with a priority (not ticked) to to-do list
+  SHIFT_TASKS.forEach(t => {
+    if (!checked.has(t.name) && priorities[t.name]) {
+      const exists = s.todoList.find(td=>td.name===t.name && !td.done);
+      if (!exists) {
+        s.todoList.push({
+          name: t.name, area: t.area,
+          priority: priorities[t.name],
+          note: notes[t.name] || '',
+          addedBy: currentManager,
+          shiftType: currentShiftType,
+          addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+          addedDate: todayKey(), done: false, doneBy: null, doneAt: null
+        });
+      }
     }
   });
 
-  // Log sign-off
+  const flagged = SHIFT_TASKS.filter(t=>!checked.has(t.name) && priorities[t.name]).length;
   if (!s.shiftSignoffs) s.shiftSignoffs = [];
   s.shiftSignoffs.push({
     manager: currentManager,
     time: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
-    completed: checked.size,
-    total: SHIFT_TASKS.length,
-    carried: unchecked.length
+    completed: checked.size, total: SHIFT_TASKS.length, flagged
   });
   saveState(s);
 
   const box = document.getElementById('shift-signed-box');
-  document.getElementById('shift-signed-name').textContent = '✓ Signed off by ' + currentManager;
+  document.getElementById('shift-signed-name').textContent = '✓ Pre-shift signed off by ' + currentManager;
   document.getElementById('shift-signed-time').textContent = document.getElementById('shift-sign-time').value;
   document.getElementById('shift-signed-note').textContent =
-    `${checked.size} of ${SHIFT_TASKS.length} tasks completed. ${unchecked.length > 0 ? unchecked.length + ' task(s) carried forward to to-do list.' : 'All tasks completed — great shift!'}`;
+    `${checked.size} of ${SHIFT_TASKS.length} tasks done. ${flagged > 0 ? flagged + ' flagged task(s) added to to-do list.' : 'All tasks completed!'}`;
   box.style.display = 'block';
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
 
   renderTodo();
   updateTodoBadge();
+  setTimeout(() => setShiftPhase('during'), 1200);
 }
 
+
+// POST-SHIFT
+function getPostShiftChecked() {
+  const s = getState();
+  return s.postShiftChecked && s.postShiftChecked[todayKey()] ? new Set(s.postShiftChecked[todayKey()]) : new Set();
+}
+
+function togglePostShiftTask(name) {
+  const s = getState();
+  if (!s.postShiftChecked) s.postShiftChecked = {};
+  if (!s.postShiftChecked[todayKey()]) s.postShiftChecked[todayKey()] = [];
+  const arr = s.postShiftChecked[todayKey()];
+  const idx = arr.indexOf(name);
+  if (idx > -1) arr.splice(idx,1); else arr.push(name);
+  saveState(s);
+  renderPostShift();
+}
+
+function renderPostShift() {
+  const checked = getPostShiftChecked();
+  let html = '';
+  POST_SHIFT_TASKS.forEach(t => {
+    const isDone = checked.has(t.name);
+    const safe = t.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html += `<div class="task-row${isDone?' done':''}" onclick="togglePostShiftTask('${safe}')">
+      <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
+      <div><div class="task-name">${t.name}</div></div>
+      <span></span>
+    </div>`;
+  });
+  document.getElementById('post-shift-task-list').innerHTML = html;
+  const total = POST_SHIFT_TASKS.length;
+  const done  = POST_SHIFT_TASKS.filter(t=>checked.has(t.name)).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('post-shift-prog').style.width = pct+'%';
+  document.getElementById('post-shift-prog-label').textContent = `${done} of ${total} post-shift actions completed (${pct}%)`;
+}
+
+function signOffPostShift() {
+  const checked = getPostShiftChecked();
+  const total = POST_SHIFT_TASKS.length;
+  const done = POST_SHIFT_TASKS.filter(t=>checked.has(t.name)).length;
+  // Mark this shift type as completed for today
+  if (currentShiftType) {
+    const s = getState();
+    if (!s.completedShiftTypes) s.completedShiftTypes = {};
+    if (!s.completedShiftTypes[todayKey()]) s.completedShiftTypes[todayKey()] = [];
+    if (!s.completedShiftTypes[todayKey()].includes(currentShiftType)) {
+      s.completedShiftTypes[todayKey()].push(currentShiftType);
+    }
+    // Clear this manager's active shift
+    if (s.activeShift && s.activeShift[currentManager]) {
+      delete s.activeShift[currentManager];
+    }
+    saveState(s);
+  }
+  const box = document.getElementById('post-signed-box');
+  document.getElementById('post-signed-name').textContent = '✓ Post-shift signed off by ' + currentManager;
+  document.getElementById('post-signed-time').textContent = document.getElementById('post-sign-time').value;
+  document.getElementById('post-signed-note').textContent = `${done} of ${total} post-shift actions completed.`;
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+
+
 // ─── TO-DO LIST ──────────────────────────────────────────────────────
+let addTodoPriority = null;
+
+function toggleAddTodoPanel() {
+  const panel = document.getElementById('add-todo-panel');
+  const isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    document.getElementById('add-todo-name').value = '';
+    addTodoPriority = null;
+    ['a','b','c','d'].forEach(p => {
+      const btn = document.getElementById('add-todo-pri-' + p);
+      if (btn) { btn.style.background='#fff'; btn.style.color='#bbb'; btn.style.borderColor='#ddd'; }
+    });
+  }
+}
+
+function selectAddTodoPriority(p) {
+  addTodoPriority = addTodoPriority === p ? null : p;
+  const priColors = {a:'#FCEBEB',b:'#FAEEDA',c:'#E6F1FB',d:'#f0f0ec'};
+  const priText   = {a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'};
+  ['a','b','c','d'].forEach(x => {
+    const btn = document.getElementById('add-todo-pri-' + x);
+    if (!btn) return;
+    if (x === addTodoPriority) {
+      btn.style.background = priColors[x]; btn.style.color = priText[x]; btn.style.borderColor = priText[x];
+    } else {
+      btn.style.background = '#fff'; btn.style.color = '#bbb'; btn.style.borderColor = '#ddd';
+    }
+  });
+}
+
+function confirmAddTodo() {
+  const name = document.getElementById('add-todo-name').value.trim();
+  if (!name) { document.getElementById('add-todo-name').focus(); return; }
+  const s = getState();
+  if (!s.todoList) s.todoList = [];
+  s.todoList.push({
+    name,
+    area: 'Ad hoc',
+    priority: addTodoPriority,
+    note: '',
+    addedBy: currentManager,
+    shiftType: currentShiftType,
+    addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    addedDate: todayKey(),
+    done: false, doneBy: null, doneAt: null
+  });
+  saveState(s);
+  document.getElementById('add-todo-panel').style.display = 'none';
+  renderTodo();
+  updateTodoBadge();
+}
+
 function getTodo() {
   const s = getState();
   return s.todoList || [];
@@ -798,26 +1385,35 @@ function renderTodo() {
   updateTodoBadge();
 
   const countEl = document.getElementById('todo-count-header');
-  if (open.length > 0) {
-    countEl.innerHTML = `<span class="todo-count-badge">${open.length}</span>`;
-  } else {
-    countEl.innerHTML = '';
-  }
+  countEl.innerHTML = open.length > 0 ? `<span class="todo-count-badge">${open.length}</span>` : '';
+
+  const priColors = {a:'#FCEBEB',b:'#FAEEDA',c:'#E6F1FB',d:'#f0f0ec'};
+  const priText   = {a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'};
+  const priLabel  = {a:'A — Fix now',b:'B — Fix now',c:'C — 1–3 hrs',d:'D — 1–3 days'};
 
   let html = '';
   if (open.length === 0 && done.length === 0) {
     html = '<div class="empty-state">No outstanding tasks — all clear! 🎉</div>';
   } else {
     if (open.length > 0) {
+      // Sort by priority: a first, then b, c, d, then no priority
+      const priOrder = {a:0,b:1,c:2,d:3,undefined:4};
+      const sorted = [...todo].filter(t=>!t.done).sort((a,b) => (priOrder[a.priority]||4) - (priOrder[b.priority]||4));
       html += `<div class="section-header"><span>Outstanding</span><span>${open.length} remaining</span></div>`;
-      todo.forEach((t,i) => {
-        if (t.done) return;
-        const safe = i;
-        html += `<div class="task-row todo-item" onclick="toggleTodo(${safe})">
+      sorted.forEach(t => {
+        const i = todo.indexOf(t);
+        const hasPri = t.priority;
+        const borderColor = hasPri ? ({a:'#E24B4A',b:'#EF9F27',c:'#378ADD',d:'#888'}[t.priority]) : '#f0a500';
+        html += `<div class="task-row todo-item" onclick="toggleTodo(${i})" style="border-left:3px solid ${borderColor}">
           <div class="checkbox"></div>
-          <div>
+          <div style="flex:1">
             <div class="task-name">${t.name}</div>
-            <div class="task-meta">Carried from ${t.addedBy} · ${t.addedAt}</div>
+            <div class="task-meta" style="margin-top:3px">
+              ${hasPri ? `<span style="background:${priColors[t.priority]};color:${priText[t.priority]};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px">${priLabel[t.priority]}</span>` : ''}
+              ${t.shiftType ? `<span style="font-size:10px;font-weight:600;color:#888;margin-right:4px">${t.shiftType.charAt(0).toUpperCase()+t.shiftType.slice(1)}</span>·` : ''}
+              ${t.addedBy} · ${t.addedAt}
+            </div>
+            ${t.note ? `<div class="task-meta" style="margin-top:2px">📝 ${t.note}</div>` : ''}
           </div>
           <span class="badge badge-area">${t.area}</span>
         </div>`;
@@ -1570,6 +2166,7 @@ function parseBreakSchedule(allRows) {
   s.breakDays = breakDays;
   saveState(s);
 
+  document.getElementById('breaks-add-btn').style.display = 'block';
   renderBreakDaySelector();
   renderBreakSheet();
   document.getElementById('breaks-day-selector').style.display = 'block';
@@ -1579,9 +2176,11 @@ function resetBreaksUpload() {
   breakSchedule = {};
   breakDays = [];
   selectedBreakDay = null;
+  breakChecked = {};
   const s = getState();
   delete s.breakSchedule;
   delete s.breakDays;
+  delete s.breakChecked;
   saveState(s);
   const area = document.getElementById('breaks-upload-area');
   area.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📄</div>' +
@@ -1657,38 +2256,46 @@ function renderBreakSheet() {
     const netDisplay = netHours.toFixed(2) + 'h';
 
     const note = breakChecked[key]?.note || '';
+    const isStruckOff = breakChecked[key]?.struckOff || false;
     const safeNote = note.replace(/'/g, "\\'");
 
-    const breakBoxesHtml = breaks.length === 0
-      ? '<span style="font-size:12px;color:#ccc">No break</span>'
-      : breaks.map(b => {
-          const checked = breakChecked[key]?.[b] || false;
-          return `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
-            <span class="break-box-label">${b}</span>
-            <div class="break-checkbox${checked?' checked':''}"></div>
-          </div>`;
-        }).join('');
+    const breakBoxesHtml = isStruckOff
+      ? '<span style="font-size:12px;color:#ccc">—</span>'
+      : breaks.length === 0
+        ? '<span style="font-size:12px;color:#ccc">No break</span>'
+        : breaks.map(b => {
+            const checked = breakChecked[key]?.[b] || false;
+            return `<div class="break-box" onclick="toggleBreak('${safeName}','${safeDay}','${b}')">
+              <span class="break-box-label">${b}</span>
+              <div class="break-checkbox${checked?' checked':''}"></div>
+            </div>`;
+          }).join('');
 
-    const noteHtml = breakChecked[key]?.showNote
+    // Strike-off button only appears inside the note panel when there's text
+    const strikeOffInNote = breakChecked[key]?.showNote
       ? `<div style="display:flex;gap:6px;padding:6px 1rem 10px;background:#fff;border-bottom:1px solid #f0f0ec">
-          <input type="text" value="${note}" placeholder="Add a note..." onchange="saveBreakNote('${safeName}','${safeDay}',this.value)" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
-          <button onclick="saveBreakNote('${safeName}','${safeDay}',this.previousElementSibling.value)" style="padding:6px 10px;border-radius:6px;background:#1D9E75;color:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit">Save</button>
+          <input type="text" id="note-input-${key.replace(/[^a-zA-Z0-9]/g,'_')}" value="${note}" placeholder="Add a note..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit">
+          <button onclick="saveBreakNote('${safeName}','${safeDay}',document.getElementById('note-input-${key.replace(/[^a-zA-Z0-9]/g,'_')}').value)" style="padding:6px 10px;border-radius:6px;background:#1D9E75;color:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit">Save</button>
+          ${!isStruckOff ? `<button onclick="strikeOffWithNote('${safeName}','${safeDay}',document.getElementById('note-input-${key.replace(/[^a-zA-Z0-9]/g,'_')}').value)" style="padding:6px 10px;border-radius:6px;background:#d4000a;color:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit" title="Save note and strike off">🚫</button>` : `<button onclick="toggleStruckOff('${safeName}','${safeDay}')" style="padding:6px 10px;border-radius:6px;background:#1D9E75;color:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit" title="Reinstate">↩</button>`}
         </div>`
-      : (note ? `<div style="padding:4px 1rem 8px;font-size:12px;color:#888;background:#fff;border-bottom:1px solid #f0f0ec">📝 ${note}</div>` : '');
+      : (note ? `<div style="padding:4px 1rem 8px;font-size:12px;color:${isStruckOff?'#d4000a':'#888'};background:#fff;border-bottom:1px solid #f0f0ec">${isStruckOff?'🚫':'📝'} ${note}${isStruckOff ? ` <span onclick="toggleStruckOff('${safeName}','${safeDay}')" style="margin-left:8px;cursor:pointer;text-decoration:underline;color:#1D9E75;font-size:11px">reinstate</span>` : ''}</div>` : '');
 
-    html += `<div class="break-row">
-      <div>
-        <div class="break-name">${person.name}</div>
-        <div class="break-time">${person.start} – ${person.end} <span style="color:#bbb;font-size:11px">(${netDisplay} net)</span></div>
+    const rowStyle = isStruckOff ? 'opacity:0.45;' : '';
+    const nameStyle = isStruckOff ? 'text-decoration:line-through;color:#888;' : '';
+
+    html += `<div class="break-row" style="${rowStyle}">
+      <div style="flex:1">
+        <div class="break-name" style="${nameStyle}">${person.name}</div>
+        <div class="break-time" style="${isStruckOff?'text-decoration:line-through;':''}">${person.start} – ${person.end} <span style="color:#bbb;font-size:11px">(${netDisplay} net)</span></div>
       </div>
       <div class="break-boxes">
         ${breakBoxesHtml}
         <div class="break-box" onclick="toggleBreakNote('${safeName}','${safeDay}')" title="Add note">
           <span class="break-box-label">note</span>
-          <div style="width:28px;height:28px;border-radius:6px;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:14px">${note ? '📝' : '+'}</div>
+          <div style="width:28px;height:28px;border-radius:6px;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:14px">${note ? (isStruckOff?'🚫':'📝') : '+'}</div>
         </div>
       </div>
-    </div>${noteHtml}`;
+    </div>${strikeOffInNote}`;
   });
 
   document.getElementById('breaks-list').innerHTML = html;
@@ -1698,6 +2305,73 @@ function toggleBreak(name, day, type) {
   const key = name + '_' + day;
   if (!breakChecked[key]) breakChecked[key] = {};
   breakChecked[key][type] = !breakChecked[key][type];
+  saveBreakChecked();
+  renderBreakSheet();
+}
+
+function toggleAddStaffPanel() {
+  const panel = document.getElementById('breaks-add-panel');
+  const isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    document.getElementById('add-staff-name').value = '';
+    document.getElementById('add-staff-start').value = '';
+    document.getElementById('add-staff-end').value = '';
+    document.getElementById('add-staff-name').focus();
+  }
+}
+
+function confirmAddExtraStaff() {
+  const name  = document.getElementById('add-staff-name').value.trim();
+  const start = document.getElementById('add-staff-start').value;
+  const end   = document.getElementById('add-staff-end').value;
+
+  if (!name || !start || !end) {
+    alert('Please fill in name, start time and end time.');
+    return;
+  }
+  if (!selectedBreakDay || !breakSchedule[selectedBreakDay]) return;
+
+  const startMins = timeToMins(start);
+  breakSchedule[selectedBreakDay].push({ name, start, end, startMins });
+  // Re-sort by start time
+  breakSchedule[selectedBreakDay].sort((a, b) => a.startMins - b.startMins);
+
+  // Save to localStorage
+  const s = getState();
+  s.breakSchedule = breakSchedule;
+  saveState(s);
+
+  document.getElementById('breaks-add-panel').style.display = 'none';
+  renderBreakSheet();
+}
+
+function saveBreakChecked() {
+  const s = getState();
+  s.breakChecked = breakChecked;
+  saveState(s);
+}
+
+function toggleStruckOff(name, day) {
+  const key = name + '_' + day;
+  if (!breakChecked[key]) breakChecked[key] = {};
+  breakChecked[key].struckOff = !breakChecked[key].struckOff;
+  breakChecked[key].showNote = false;
+  saveBreakChecked();
+  renderBreakSheet();
+}
+
+function strikeOffWithNote(name, day, noteValue) {
+  const key = name + '_' + day;
+  if (!noteValue || !noteValue.trim()) {
+    alert('Please add a reason before striking off.');
+    return;
+  }
+  if (!breakChecked[key]) breakChecked[key] = {};
+  breakChecked[key].note = noteValue.trim();
+  breakChecked[key].struckOff = true;
+  breakChecked[key].showNote = false;
+  saveBreakChecked();
   renderBreakSheet();
 }
 
@@ -1705,7 +2379,7 @@ function toggleBreakNote(name, day) {
   const key = name + '_' + day;
   if (!breakChecked[key]) breakChecked[key] = {};
   breakChecked[key].showNote = !breakChecked[key].showNote;
-  renderBreakSheet();
+  renderBreakSheet(); // showNote is UI-only, no need to persist
 }
 
 function saveBreakNote(name, day, value) {
@@ -1713,6 +2387,7 @@ function saveBreakNote(name, day, value) {
   if (!breakChecked[key]) breakChecked[key] = {};
   breakChecked[key].note = value.trim();
   breakChecked[key].showNote = false;
+  saveBreakChecked();
   renderBreakSheet();
 }
 
@@ -1734,14 +2409,57 @@ function checkBreakSheetAlerts() {
     }
   }
 
-  // 2am push to Google Sheets
+  // 2am push to Google Sheets then remove the day
   if (h === 2 && min === 0 && !breakSheetPushed) {
     breakSheetPushed = true;
     pushBreakSheetToSheets();
+    removePastBreakDays();
   }
+
+  // Also remove past days on load/check (catches days already past 2am)
+  removePastBreakDays();
 
   // Reset flags after 3am
   if (h === 3) { breakMidnightAlerted = false; breakSheetPushed = false; }
+}
+
+function removePastBreakDays() {
+  if (breakDays.length === 0) return;
+  const now = new Date();
+
+  // A day is only removed once it's fully over — i.e. after 2am the NEXT day.
+  // So if it's Saturday at 01:30, Friday is still live.
+  // If it's Saturday at 02:30, Friday can be removed.
+  // Build a "removeBeforeDate": any day whose date number is strictly less than this.
+  const removeBeforeDate = new Date(now);
+  if (now.getHours() < 2) {
+    // Before 2am — today hasn't fully closed yet, so remove anything before yesterday
+    removeBeforeDate.setDate(removeBeforeDate.getDate() - 1);
+  }
+  // removeBeforeDate is the earliest date that should still be shown
+  // i.e. remove days strictly before removeBeforeDate
+
+  const filtered = breakDays.filter(day => {
+    const dayNum = parseInt(day.split(' ')[1]);
+    const candidate = new Date(removeBeforeDate.getFullYear(), removeBeforeDate.getMonth(), dayNum);
+    return candidate >= removeBeforeDate;
+  });
+
+  if (filtered.length !== breakDays.length) {
+    breakDays = filtered;
+    Object.keys(breakSchedule).forEach(d => {
+      if (!breakDays.includes(d)) delete breakSchedule[d];
+    });
+    const s = getState();
+    s.breakSchedule = breakSchedule;
+    s.breakDays = breakDays;
+    saveState(s);
+    if (!breakDays.includes(selectedBreakDay)) {
+      selectedBreakDay = breakDays[0] || null;
+    }
+    renderBreakDaySelector();
+    renderBreakSheet();
+  }
 }
 
 function getBreaksForPerson(person) {
@@ -1799,7 +2517,8 @@ function pushBreakSheetToSheets(isTest = false) {
     const b1done = b1 ? (breakChecked[key]?.[b1] ? 'Done' : 'Not done') : '';
     const b2done = b2 ? (breakChecked[key]?.[b2] ? 'Done' : 'Not done') : '';
     const note = breakChecked[key]?.note || '';
-    return [todayKey(), day, person.name, person.start, person.end, netHours + 'h', b1 ? b1 + 'min' : '', b1done, b2 ? b2 + 'min' : '', b2done, note];
+    const struckOff = breakChecked[key]?.struckOff ? 'Did not work' : '';
+    return [todayKey(), day, person.name, person.start, person.end, netHours + 'h', b1 ? b1 + 'min' : '', b1done, b2 ? b2 + 'min' : '', b2done, note, struckOff];
   });
 
   const params = new URLSearchParams({
@@ -1866,6 +2585,25 @@ function cleanupOldData() {
 // ─── INIT ────────────────────────────────────────────────────────────
 (function() {
   cleanupOldData();
+  // Auto-login if a valid session exists within 30 minutes
+  const s = getState();
+  if (s.session && s.session.manager && MANAGERS[s.session.manager]) {
+    const elapsed = Date.now() - s.session.loginTime;
+    if (elapsed < SESSION_DURATION) {
+      currentManager = s.session.manager;
+      // Refresh the session timestamp
+      s.session.loginTime = Date.now();
+      saveState(s);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+      document.getElementById('top-bar-user').textContent = currentManager;
+      initApp();
+    } else {
+      // Session expired — clear it
+      delete s.session;
+      saveState(s);
+    }
+  }
 })();
 </script>
 </body>
