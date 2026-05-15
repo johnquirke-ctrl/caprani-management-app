@@ -243,23 +243,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <p class="progress-label" id="cleaning-prog-label"></p>
       </div>
       <div id="cleaning-task-list"></div>
-      <div class="signoff-panel">
-        <h3>Sign off cleaning checklist</h3>
-        <div class="field" style="margin-bottom:10px">
-          <label>Manager</label>
-          <div class="sign-name-display" id="cleaning-sign-name"></div>
-        </div>
-        <div class="field">
-          <label>Date &amp; time</label>
-          <input type="text" id="cleaning-sign-time" readonly>
-        </div>
-        <button class="signoff-btn" onclick="signOffCleaning()">✓ Sign off cleaning checklist</button>
-        <div class="signed-box" id="cleaning-signed-box">
-          <div class="signed-name" id="cleaning-signed-name"></div>
-          <div class="signed-time" id="cleaning-signed-time"></div>
-          <div class="signed-note" id="cleaning-signed-note"></div>
-        </div>
-      </div>
       <div class="bottom-pad"></div>
     </div>
 
@@ -523,9 +506,7 @@ function updateDateTime() {
   document.getElementById('shift-date-label').textContent = ds;
   document.getElementById('cleaning-date-label').textContent = ds;
   document.getElementById('shift-sign-time').value = ts;
-  document.getElementById('cleaning-sign-time').value = ts;
   document.getElementById('shift-sign-name').textContent = currentManager || '';
-  document.getElementById('cleaning-sign-name').textContent = currentManager || '';
 
   // shift tag
   const h = now.getHours();
@@ -737,6 +718,7 @@ function updateTodoBadge() {
 
 // ─── CLEANING CHECKLIST ──────────────────────────────────────────────
 let cleaningFilter = 'all';
+const cleaningUndoTimers = {}; // key -> timer id
 
 function buildCleaningFilters() {
   const areas = [...new Set(CLEANING_TASKS.map(t=>t.area))];
@@ -759,15 +741,110 @@ function getCleaningChecked() {
   return s.cleaningChecked && s.cleaningChecked[todayKey()] ? new Set(s.cleaningChecked[todayKey()]) : new Set();
 }
 
-function toggleCleaningTask(key) {
+function toggleCleaningTask(key, area, name, freq) {
   const s = getState();
   if (!s.cleaningChecked) s.cleaningChecked = {};
   if (!s.cleaningChecked[todayKey()]) s.cleaningChecked[todayKey()] = [];
   const arr = s.cleaningChecked[todayKey()];
   const idx = arr.indexOf(key);
-  if (idx > -1) arr.splice(idx,1); else arr.push(key);
-  saveState(s);
-  renderCleaning();
+
+  if (idx > -1) {
+    // Unticking — cancel any pending push and uncheck
+    if (cleaningUndoTimers[key]) {
+      clearTimeout(cleaningUndoTimers[key]);
+      delete cleaningUndoTimers[key];
+    }
+    arr.splice(idx, 1);
+    saveState(s);
+    renderCleaning();
+  } else {
+    // Ticking — add to checked, start 10s undo countdown
+    arr.push(key);
+    saveState(s);
+    renderCleaning();
+    startCleaningUndo(key, area, name, freq);
+  }
+}
+
+function startCleaningUndo(key, area, name, freq) {
+  // Clear any existing timer
+  if (cleaningUndoTimers[key]) clearTimeout(cleaningUndoTimers[key]);
+
+  // Show undo toast
+  showUndoToast(key, area, name, freq);
+
+  // After 10s, push to sheets
+  cleaningUndoTimers[key] = setTimeout(() => {
+    delete cleaningUndoTimers[key];
+    hideUndoToast(key);
+    pushCleaningToSheets(area, name, freq);
+  }, 10000);
+}
+
+function undoCleaningTask(key) {
+  if (cleaningUndoTimers[key]) {
+    clearTimeout(cleaningUndoTimers[key]);
+    delete cleaningUndoTimers[key];
+  }
+  hideUndoToast(key);
+  // Uncheck the task
+  const s = getState();
+  if (s.cleaningChecked && s.cleaningChecked[todayKey()]) {
+    const arr = s.cleaningChecked[todayKey()];
+    const idx = arr.indexOf(key);
+    if (idx > -1) arr.splice(idx, 1);
+    saveState(s);
+    renderCleaning();
+  }
+}
+
+function showUndoToast(key, area, name, freq) {
+  let container = document.getElementById('undo-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'undo-container';
+    container.style.cssText = 'position:fixed;bottom:90px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:50;pointer-events:none';
+    document.body.appendChild(container);
+  }
+  const safeKey = key.replace(/'/g, "\\'");
+  const toast = document.createElement('div');
+  toast.id = 'undo-' + btoa(key).replace(/=/g,'');
+  toast.style.cssText = 'background:#333;color:#fff;padding:8px 6px 8px 14px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:10px;pointer-events:all;max-width:320px;width:calc(100% - 40px)';
+  toast.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✓ ${name}</span>
+    <button onclick="undoCleaningTask('${safeKey}')" style="background:#d4000a;color:#fff;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0">Undo</button>`;
+  container.appendChild(toast);
+
+  // Countdown bar
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:absolute;bottom:0;left:0;height:3px;background:#d4000a;border-radius:0 0 20px 20px;width:100%;transition:width 10s linear';
+  toast.appendChild(bar);
+  setTimeout(() => { bar.style.width = '0%'; }, 50);
+}
+
+function hideUndoToast(key) {
+  const id = 'undo-' + btoa(key).replace(/=/g,'');
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function pushCleaningToSheets(area, name, freq) {
+  const now = new Date();
+  const params = new URLSearchParams({
+    action:  'cleaning',
+    date:    todayKey(),
+    time:    now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'}),
+    manager: currentManager,
+    area:    area,
+    task:    name,
+    freq:    freqLabel(freq)
+  });
+  fetch(SHEETS_URL + '?' + params.toString())
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) showToast('✓ Logged to Google Sheets');
+      else console.error('Cleaning sheet error:', data.error);
+    })
+    .catch(err => console.error('Cleaning sheets push error:', err));
 }
 
 const freqLabel = f => ({daily:'Daily',weekly:'Weekly',fortnightly:'Fortnightly',monthly:'Monthly',other:'Periodic'}[f]||f);
@@ -786,7 +863,9 @@ function renderCleaning() {
       const key = t.area+'|'+t.name;
       const isDone = checked.has(key);
       const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += `<div class="task-row${isDone?' done':''}" onclick="toggleCleaningTask('${safeKey}')">
+      const safeArea = t.area.replace(/'/g,"\\'");
+      const safeName = t.name.replace(/'/g,"\\'");
+      html += `<div class="task-row${isDone?' done':''}" onclick="toggleCleaningTask('${safeKey}','${safeArea}','${safeName}','${t.freq}')">
         <div class="checkbox${isDone?' checked':''}">${isDone?'<span class="checkmark">✓</span>':''}</div>
         <div>
           <div class="task-name">${t.name}</div>
@@ -802,26 +881,6 @@ function renderCleaning() {
   const pct   = total ? Math.round(done/total*100) : 0;
   document.getElementById('cleaning-prog').style.width = pct+'%';
   document.getElementById('cleaning-prog-label').textContent = `${done} of ${total} tasks completed (${pct}%)`;
-}
-
-function signOffCleaning() {
-  const checked = getCleaningChecked();
-  const total = CLEANING_TASKS.length;
-  const done  = CLEANING_TASKS.filter(t=>checked.has(t.area+'|'+t.name)).length;
-  const s = getState();
-  if (!s.cleaningSignoffs) s.cleaningSignoffs = [];
-  s.cleaningSignoffs.push({
-    manager: currentManager,
-    time: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
-    completed: done, total
-  });
-  saveState(s);
-  const box = document.getElementById('cleaning-signed-box');
-  document.getElementById('cleaning-signed-name').textContent = '✓ Signed off by ' + currentManager;
-  document.getElementById('cleaning-signed-time').textContent = document.getElementById('cleaning-sign-time').value;
-  document.getElementById('cleaning-signed-note').textContent = `${done} of ${total} tasks completed.`;
-  box.style.display = 'block';
-  box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ─── TOILET LOG ──────────────────────────────────────────────────────
