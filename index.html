@@ -855,18 +855,15 @@ function logToiletCheck() {
   const nowMins = now.getHours()*60 + now.getMinutes();
   const slots = getToiletSlots();
 
-  // Only consider slots at or before now, pick the closest one
+  // Find the slot closest to now in either direction
   let bestSlot = null;
   let bestDiff = Infinity;
   slots.forEach(slot => {
     const slotMins = slot.h*60 + slot.m;
-    if (slotMins <= nowMins) {
-      const diff = nowMins - slotMins;
-      if (diff < bestDiff) { bestDiff = diff; bestSlot = slot.label; }
-    }
+    const diff = Math.abs(slotMins - nowMins);
+    if (diff < bestDiff) { bestDiff = diff; bestSlot = slot.label; }
   });
 
-  // If before opening (before 07:00), use first slot
   if (!bestSlot && slots.length > 0) bestSlot = slots[0].label;
 
   const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -1050,6 +1047,24 @@ function cleanupOldData() {
   const today = todayKey();
   if (s.todoList) {
     s.todoList = s.todoList.filter(t => t.addedDate === today);
+  }
+  // Remove any toilet log entries for future slots (more than 35 mins ahead)
+  if (s.toiletLog && s.toiletLog[today]) {
+    const now = new Date();
+    const nowMins = now.getHours()*60 + now.getMinutes();
+    const slots = new Set();
+    // Build valid slot times up to now+35 mins
+    let h = 7, m = 0;
+    while (h < 25) {
+      const slotMins = h*60 + m;
+      if (slotMins <= nowMins + 35) {
+        slots.add(String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+      }
+      m += 30;
+      if (m >= 60) { h++; m -= 60; }
+      if (h > 24) break;
+    }
+    s.toiletLog[today] = s.toiletLog[today].filter(l => slots.has(l.slot));
   }
   saveState(s);
 }
