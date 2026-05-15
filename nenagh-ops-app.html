@@ -855,8 +855,8 @@ function logToiletCheck() {
   const nowMins = now.getHours()*60 + now.getMinutes();
   const slots = getToiletSlots();
 
-  // Find the slot closest to now — the one whose time is nearest (past or future within 15 mins)
-  let bestSlot = null;
+  // Always find the slot closest to now
+  let bestSlot = slots[0] ? slots[0].label : '07:00';
   let bestDiff = Infinity;
   slots.forEach(slot => {
     const slotMins = slot.h*60 + slot.m;
@@ -998,15 +998,30 @@ function pushCheckToSheets(slot, checkedAt) {
     manager:   currentManager,
     checkedAt: checkedAt
   };
-  // Use no-cors with a form submission approach to avoid CORS preflight issues
-  const form = new FormData();
-  form.append('data', JSON.stringify(payload));
   fetch(SHEETS_URL, {
     method: 'POST',
     body: JSON.stringify(payload),
     mode: 'no-cors'
   })
-  .catch(err => console.error('Sheets push error:', err));
+  .then(() => showToast('✓ Logged to Google Sheets'))
+  .catch(err => {
+    console.error('Sheets push error:', err);
+    showToast('⚠ Could not reach Google Sheets');
+  });
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:50;opacity:0;transition:opacity 0.3s;white-space:nowrap';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
 // ─── DAILY RESET ─────────────────────────────────────────────────────
