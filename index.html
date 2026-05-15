@@ -238,7 +238,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="page active" id="page-shift">
       <div class="page-header">
         <h2>Shift checklist <span class="shift-tag" id="shift-tag-label"></span></h2>
-        <p id="shift-date-label"></p>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <p id="shift-date-label" style="margin:0"></p>
+          <button id="change-shift-btn" onclick="changeShiftType()" style="display:none;font-size:11px;color:#888;background:transparent;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">Change</button>
+        </div>
       </div>
 
       <!-- SHIFT TYPE SELECTOR -->
@@ -794,8 +797,14 @@ function doLogin() {
 document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
-  currentManager = null;
+  // Clear this manager's active shift on logout
   const s = getState();
+  if (s.activeShift && s.activeShift[currentManager]) {
+    delete s.activeShift[currentManager];
+    saveState(s);
+  }
+  currentManager = null;
+  currentShiftType = null;
   delete s.session;
   saveState(s);
   document.getElementById('login-screen').style.display='flex';
@@ -924,20 +933,34 @@ function renderShiftTypeSelector() {
   }
 }
 
+function changeShiftType() {
+  // Clear this manager's active shift
+  currentShiftType = null;
+  const s = getState();
+  if (s.activeShift && s.activeShift[currentManager]) {
+    delete s.activeShift[currentManager];
+    saveState(s);
+  }
+  document.getElementById('shift-content').style.display = 'none';
+  document.getElementById('shift-type-selector').style.display = 'block';
+  document.getElementById('change-shift-btn').style.display = 'none';
+  const tag = document.getElementById('shift-tag-label');
+  tag.textContent = '';
+  renderShiftTypeSelector();
+}
+
 function selectShiftType(type) {
   currentShiftType = type;
-  // Save per-manager current shift type for this session
   const s = getState();
   if (!s.activeShift) s.activeShift = {};
   s.activeShift[currentManager] = { type, date: todayKey() };
   saveState(s);
-  // Update header tag
   const tag = document.getElementById('shift-tag-label');
   tag.textContent = type.charAt(0).toUpperCase() + type.slice(1);
   tag.className = 'shift-tag shift-' + (type === 'open' ? 'open' : type === 'day' ? 'mid' : 'close');
-  // Show checklist, hide selector
   document.getElementById('shift-type-selector').style.display = 'none';
   document.getElementById('shift-content').style.display = 'block';
+  document.getElementById('change-shift-btn').style.display = 'inline';
   setShiftPhase('pre');
   renderShift();
   renderSmartTargets();
@@ -945,15 +968,17 @@ function selectShiftType(type) {
 
 function restoreShiftType() {
   const s = getState();
-  // Check if this manager has an active shift today
   if (s.activeShift && s.activeShift[currentManager]) {
     const active = s.activeShift[currentManager];
     if (active.date === todayKey()) {
       selectShiftType(active.type);
       return;
+    } else {
+      // Stale — clear it
+      delete s.activeShift[currentManager];
+      saveState(s);
     }
   }
-  // Otherwise show the selector with available shifts
   renderShiftTypeSelector();
 }
 
