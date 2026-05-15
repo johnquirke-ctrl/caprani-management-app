@@ -404,19 +404,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="add-todo-panel" style="display:none;background:#fff;border-radius:10px;border:1px solid #e5e5e0;margin-top:8px;overflow:hidden">
           <div style="padding:10px 1rem;background:#eeeee8;font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.07em">New task</div>
           <div style="padding:12px 1rem;display:flex;flex-direction:column;gap:8px">
-            <input type="text" id="add-todo-name" placeholder="Task description..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
-            <div style="display:flex;gap:6px;align-items:center">
+
+            <!-- Step 1: Category -->
+            <div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:4px">Category</div>
+              <select id="add-todo-category" onchange="onAddTodoCategoryChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;background:#fff">
+                <option value="">Select a category...</option>
+              </select>
+            </div>
+
+            <!-- Step 2: Task (hidden until category selected) -->
+            <div id="add-todo-task-row" style="display:none">
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:4px">Task</div>
+              <select id="add-todo-task" onchange="onAddTodoTaskChange()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;background:#fff">
+                <option value="">Select a task...</option>
+              </select>
+            </div>
+
+            <!-- Step 3: Custom task input (shown when "Other" selected) -->
+            <div id="add-todo-custom-row" style="display:none">
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:4px">Describe the task</div>
+              <input type="text" id="add-todo-custom" placeholder="Type task description..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+            </div>
+
+            <!-- Note -->
+            <div id="add-todo-note-row" style="display:none">
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:4px">Note <span style="font-weight:400">(optional)</span></div>
+              <input type="text" id="add-todo-note" placeholder="Add context..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit">
+            </div>
+
+            <!-- Priority -->
+            <div id="add-todo-pri-row" style="display:none;flex-direction:row;gap:6px;align-items:center">
               <span style="font-size:12px;color:#888;font-weight:500">Priority:</span>
-              <div id="add-todo-pri-buttons" style="display:flex;gap:4px">
+              <div style="display:flex;gap:4px">
                 <button id="add-todo-pri-a" onclick="selectAddTodoPriority('a')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">A</button>
                 <button id="add-todo-pri-b" onclick="selectAddTodoPriority('b')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">B</button>
                 <button id="add-todo-pri-c" onclick="selectAddTodoPriority('c')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">C</button>
                 <button id="add-todo-pri-d" onclick="selectAddTodoPriority('d')" style="width:26px;height:26px;border-radius:4px;border:1.5px solid #ddd;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#bbb">D</button>
               </div>
             </div>
+
             <div style="display:flex;gap:8px">
               <button onclick="confirmAddTodo()" style="flex:1;padding:10px;border-radius:8px;background:#1D9E75;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Add task</button>
-              <button onclick="document.getElementById('add-todo-panel').style.display='none'" style="padding:10px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#888">Cancel</button>
+              <button onclick="toggleAddTodoPanel()" style="padding:10px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#888">Cancel</button>
             </div>
           </div>
         </div>
@@ -937,7 +967,6 @@ function renderShiftTypeSelector() {
 }
 
 function changeShiftType() {
-  // Clear this manager's active shift
   currentShiftType = null;
   const s = getState();
   if (s.activeShift && s.activeShift[currentManager]) {
@@ -947,12 +976,15 @@ function changeShiftType() {
   document.getElementById('shift-content').style.display = 'none';
   document.getElementById('shift-type-selector').style.display = 'block';
   document.getElementById('change-shift-btn').style.display = 'none';
-  const tag = document.getElementById('shift-tag-label');
-  tag.textContent = '';
+  document.getElementById('shift-tag-label').textContent = '';
   renderShiftTypeSelector();
 }
 
 function selectShiftType(type) {
+  // Block if this shift type is already completed
+  const completed = getCompletedShiftTypes();
+  if (completed.has(type)) return;
+
   currentShiftType = type;
   const s = getState();
   if (!s.activeShift) s.activeShift = {};
@@ -963,7 +995,9 @@ function selectShiftType(type) {
   tag.className = 'shift-tag shift-' + (type === 'open' ? 'open' : type === 'day' ? 'mid' : 'close');
   document.getElementById('shift-type-selector').style.display = 'none';
   document.getElementById('shift-content').style.display = 'block';
-  document.getElementById('change-shift-btn').style.display = 'inline';
+  // Only show Change button if there are other available shifts remaining
+  const available = ['open','day','close'].filter(t => !completed.has(t) && t !== type);
+  document.getElementById('change-shift-btn').style.display = available.length > 0 ? 'inline' : 'none';
   setShiftPhase('pre');
   renderShift();
   renderSmartTargets();
@@ -1258,9 +1292,10 @@ function signOffShift() {
   if (!s.todoList) s.todoList = [];
 
   // Add tasks with a priority (not ticked) to to-do list
+  // Allow duplicates if they come from a different shift type
   SHIFT_TASKS.forEach(t => {
     if (!checked.has(t.name) && priorities[t.name]) {
-      const exists = s.todoList.find(td=>td.name===t.name && !td.done);
+      const exists = s.todoList.find(td => td.name === t.name && td.shiftType === currentShiftType && !td.done);
       if (!exists) {
         s.todoList.push({
           name: t.name, area: t.area,
@@ -1371,13 +1406,63 @@ function toggleAddTodoPanel() {
   const isVisible = panel.style.display !== 'none';
   panel.style.display = isVisible ? 'none' : 'block';
   if (!isVisible) {
-    document.getElementById('add-todo-name').value = '';
+    // Reset all fields
     addTodoPriority = null;
+    // Populate category dropdown
+    const areas = [...new Set(SHIFT_TASKS.map(t => t.area))];
+    const catSel = document.getElementById('add-todo-category');
+    catSel.innerHTML = '<option value="">Select a category...</option>' +
+      areas.map(a => `<option value="${a.replace(/"/g,'&quot;')}">${a}</option>`).join('');
+    // Reset downstream
+    document.getElementById('add-todo-task-row').style.display = 'none';
+    document.getElementById('add-todo-custom-row').style.display = 'none';
+    document.getElementById('add-todo-pri-row').style.display = 'none';
+    document.getElementById('add-todo-note-row').style.display = 'none';
+    document.getElementById('add-todo-task').innerHTML = '<option value="">Select a task...</option>';
+    document.getElementById('add-todo-custom').value = '';
+    document.getElementById('add-todo-note').value = '';
     ['a','b','c','d'].forEach(p => {
       const btn = document.getElementById('add-todo-pri-' + p);
       if (btn) { btn.style.background='#fff'; btn.style.color='#bbb'; btn.style.borderColor='#ddd'; }
     });
   }
+}
+
+function onAddTodoCategoryChange() {
+  const area = document.getElementById('add-todo-category').value;
+  const taskRow = document.getElementById('add-todo-task-row');
+  const customRow = document.getElementById('add-todo-custom-row');
+  const priRow = document.getElementById('add-todo-pri-row');
+  if (!area) {
+    taskRow.style.display = 'none';
+    customRow.style.display = 'none';
+    priRow.style.display = 'none';
+    return;
+  }
+  // Populate task dropdown for this area
+  const tasks = SHIFT_TASKS.filter(t => t.area === area);
+  const taskSel = document.getElementById('add-todo-task');
+  taskSel.innerHTML = '<option value="">Select a task...</option>' +
+    tasks.map(t => `<option value="${t.name.replace(/"/g,'&quot;')}">${t.name}</option>`).join('') +
+    '<option value="__other__">Other (type your own)</option>';
+  taskRow.style.display = 'block';
+  customRow.style.display = 'none';
+  priRow.style.display = 'none';
+}
+
+function onAddTodoTaskChange() {
+  const val = document.getElementById('add-todo-task').value;
+  const customRow = document.getElementById('add-todo-custom-row');
+  const priRow = document.getElementById('add-todo-pri-row');
+  const noteRow = document.getElementById('add-todo-note-row');
+  if (val === '__other__') {
+    customRow.style.display = 'block';
+    document.getElementById('add-todo-custom').focus();
+  } else {
+    customRow.style.display = 'none';
+  }
+  priRow.style.display = val ? 'flex' : 'none';
+  noteRow.style.display = val ? 'block' : 'none';
 }
 
 function selectAddTodoPriority(p) {
@@ -1396,15 +1481,22 @@ function selectAddTodoPriority(p) {
 }
 
 function confirmAddTodo() {
-  const name = document.getElementById('add-todo-name').value.trim();
-  if (!name) { document.getElementById('add-todo-name').focus(); return; }
+  const area = document.getElementById('add-todo-category').value;
+  const taskVal = document.getElementById('add-todo-task').value;
+  const custom = document.getElementById('add-todo-custom').value.trim();
+  if (!area) { showToast('Please select a category'); return; }
+  if (!taskVal) { showToast('Please select a task'); return; }
+  const name = taskVal === '__other__' ? custom : taskVal;
+  if (!name) { showToast('Please describe the task'); return; }
+
+  const note = document.getElementById('add-todo-note').value.trim();
   const s = getState();
   if (!s.todoList) s.todoList = [];
   s.todoList.push({
     name,
-    area: 'Ad hoc',
+    area: area,
     priority: addTodoPriority,
-    note: '',
+    note,
     addedBy: currentManager,
     shiftType: currentShiftType,
     addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
@@ -1412,7 +1504,7 @@ function confirmAddTodo() {
     done: false, doneBy: null, doneAt: null
   });
   saveState(s);
-  document.getElementById('add-todo-panel').style.display = 'none';
+  toggleAddTodoPanel();
   renderTodo();
   updateTodoBadge();
 }
@@ -1481,21 +1573,32 @@ function renderTodo() {
       });
     }
     if (done.length > 0) {
-      html += `<div class="section-header" style="margin-top:8px"><span>Completed today</span><span>${done.length}</span></div>`;
-      todo.forEach((t,i) => {
-        if (!t.done) return;
-        html += `<div class="task-row done">
-          <div class="checkbox checked"><span class="checkmark">✓</span></div>
-          <div>
-            <div class="task-name">${t.name}</div>
-            <div class="task-meta">Done by ${t.doneBy} · ${t.doneAt}</div>
-          </div>
-          <span class="badge badge-area">${t.area}</span>
-        </div>`;
-      });
+      const isOpen = window._todoCompletedOpen || false;
+      html += `<div class="section-header" style="margin-top:8px;cursor:pointer" onclick="toggleTodoCompleted()">
+        <span>Completed today</span>
+        <span style="display:flex;align-items:center;gap:6px">${done.length} <span style="font-size:10px">${isOpen ? '▲' : '▼'}</span></span>
+      </div>`;
+      if (isOpen) {
+        todo.forEach((t,i) => {
+          if (!t.done) return;
+          html += `<div class="task-row done">
+            <div class="checkbox checked"><span class="checkmark">✓</span></div>
+            <div>
+              <div class="task-name">${t.name}</div>
+              <div class="task-meta">Done by ${t.doneBy} · ${t.doneAt}</div>
+            </div>
+            <span class="badge badge-area">${t.area}</span>
+          </div>`;
+        });
+      }
     }
   }
   document.getElementById('todo-list').innerHTML = html;
+}
+
+function toggleTodoCompleted() {
+  window._todoCompletedOpen = !window._todoCompletedOpen;
+  renderTodo();
 }
 
 function updateTodoBadge() {
