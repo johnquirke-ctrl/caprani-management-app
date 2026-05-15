@@ -235,7 +235,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="page" id="page-cleaning">
       <div class="page-header">
         <h2>Cleaning checklist</h2>
-        <p id="cleaning-date-label"></p>
+        <p id="cleaning-date-label" onclick="toggleDateOverride()" style="cursor:pointer" title="Tap to override date for testing"></p>
+        <div id="date-override-panel" style="display:none;margin-top:8px;padding:8px 0;border-top:1px solid #f0f0ec">
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:500">🧪 TEST MODE — viewing a different date</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="date" id="date-override-input" style="flex:1;padding:7px 10px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit" onchange="applyDateOverride()">
+            <button onclick="clearDateOverride()" style="padding:7px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#d4000a;white-space:nowrap">Reset to today</button>
+          </div>
+        </div>
       </div>
       <div class="filters" id="cleaning-filters"></div>
       <div class="progress-wrap">
@@ -548,7 +555,7 @@ function updateDateTime() {
   const ds = now.toLocaleDateString('en-IE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.getElementById('shift-date-label').textContent = ds;
-  document.getElementById('cleaning-date-label').textContent = ds;
+  updateCleaningDateLabel();
   document.getElementById('shift-sign-time').value = ts;
   document.getElementById('shift-sign-name').textContent = currentManager || '';
 
@@ -763,6 +770,49 @@ function updateTodoBadge() {
 // ─── CLEANING CHECKLIST ──────────────────────────────────────────────
 let cleaningFilter = 'all';
 const cleaningUndoTimers = {}; // key -> timer id
+let cleaningDateOverride = null; // Date object or null
+
+function getCleaningDate() {
+  return cleaningDateOverride ? new Date(cleaningDateOverride) : new Date();
+}
+
+function toggleDateOverride() {
+  const panel = document.getElementById('date-override-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block' && !document.getElementById('date-override-input').value) {
+    document.getElementById('date-override-input').value = getCleaningDate().toISOString().slice(0,10);
+  }
+}
+
+function applyDateOverride() {
+  const val = document.getElementById('date-override-input').value;
+  if (val) {
+    cleaningDateOverride = val;
+    updateCleaningDateLabel();
+    renderCleaning();
+  }
+}
+
+function clearDateOverride() {
+  cleaningDateOverride = null;
+  document.getElementById('date-override-input').value = '';
+  document.getElementById('date-override-panel').style.display = 'none';
+  updateCleaningDateLabel();
+  renderCleaning();
+}
+
+function updateCleaningDateLabel() {
+  const date = getCleaningDate();
+  const ds = date.toLocaleDateString('en-IE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const label = document.getElementById('cleaning-date-label');
+  if (cleaningDateOverride) {
+    label.textContent = ds + ' (test mode)';
+    label.style.color = '#d4000a';
+  } else {
+    label.textContent = ds;
+    label.style.color = '';
+  }
+}
 
 function buildCleaningFilters() {
   const areas = [...new Set(CLEANING_TASKS.map(t=>t.area))];
@@ -895,7 +945,7 @@ const freqLabel = f => ({daily:'Daily',weekly:'Weekly',fortnightly:'Fortnightly'
 const freqColors = {daily:'background:#EAF3DE;color:#3B6D11',weekly:'background:#E6F1FB;color:#185FA5',fortnightly:'background:#EEEDFE;color:#534AB7',monthly:'background:#FAEEDA;color:#854F0B',other:'background:#f0f0ec;color:#555'};
 
 function renderCleaning() {
-  const today = new Date();
+  const today = getCleaningDate();
   const checked = getCleaningChecked();
   const s = getState();
 
@@ -991,7 +1041,35 @@ function renderCleaning() {
   const doneToday = filteredToday.filter(t=>checked.has(t.area+'|'+t.name)).length;
   const pct = totalToday ? Math.round(doneToday/totalToday*100) : 0;
   document.getElementById('cleaning-prog').style.width = pct+'%';
-  document.getElementById('cleaning-prog-label').textContent = `${doneToday} of ${totalToday} tasks completed today (${pct}%)`;
+
+  // Count overdue tasks completed today (tasks checked today that were due on a previous day)
+  const allOverdueKeys = new Set(overdueTasks.map(t=>t.key));
+  // Also include ones already ticked (filtered out of overdueTasks but still completed overdue)
+  let caughtUpCount = 0;
+  if (s.cleaningChecked && s.cleaningChecked[todayKey()]) {
+    s.cleaningChecked[todayKey()].forEach(key => {
+      // Was this task due on a previous day but not that day?
+      for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - daysAgo);
+        const pastKey = pastDate.toISOString().slice(0,10);
+        const pastChecked = new Set((s.cleaningChecked && s.cleaningChecked[pastKey]) || []);
+        const task = CLEANING_TASKS.find(t => (t.area+'|'+t.name) === key);
+        if (task && isTaskDueOn(task, pastDate) && !pastChecked.has(key)) {
+          caughtUpCount++;
+          break;
+        }
+      }
+    });
+  }
+
+  let progressText = `${doneToday} of ${totalToday} cleaning tasks completed today (${pct}%).`;
+  if (caughtUpCount > 0) {
+    progressText += `\nYou also caught up on ${caughtUpCount} overdue task${caughtUpCount > 1 ? 's' : ''} — thank you!`;
+  }
+  const progLabel = document.getElementById('cleaning-prog-label');
+  progLabel.style.whiteSpace = 'pre-line';
+  progLabel.textContent = progressText;
 }
 
 // ─── TOILET LOG ──────────────────────────────────────────────────────
