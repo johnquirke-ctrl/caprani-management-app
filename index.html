@@ -666,178 +666,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <h2>Resources</h2>
         <p>Reference documents for your shift — read only.</p>
       </div>
-      <div style="padding:12px;display:flex;flex-direction:column;gap:10px">
-
-        <!-- CLEANING CARDS -->
-        <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
-          <div onclick="toggleResource('res-cleaning')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">🧹</span>
-              <div style="font-size:14px;font-weight:600;color:#1a1a1a">Cleaning Cards</div>
-            </div>
-            <span id="res-cleaning-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
-          </div>
-          <div id="res-cleaning" style="display:none;border-top:1px solid #f0f0ec">
-
-            <!-- Cleaning Catalogue -->
-            <div style="border-bottom:1px solid #f0f0ec">
-              ${resFile('Resources/Cleaning Cards/Cleaning_Catalogue.pdf', '📄 Cleaning Catalogue')}
-            </div>
-
-            <!-- Closing -->
-            <div style="background:#f9f9f6;padding:8px 16px;border-bottom:1px solid #f0f0ec">
-              <div onclick="toggleResource('res-cleaning-closing')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-                <span style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em">Closing</span>
-                <span id="res-cleaning-closing-chevron" style="font-size:16px;color:#aaa;transition:transform 0.2s">›</span>
-              </div>
-              <div id="res-cleaning-closing" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:2px">
-                ${[
-                  ['57581-01 Prince Castle NexGen UHC MCD UK CARD.pdf','Prince Castle NexGen UHC'],
-                  ['61648-01 McD_EN Grill Daily All Types Card.pdf','Grill Daily All Types'],
-                  ['BE010-UCC BW4 Daily Cleaning & Troubleshooting Guide.pdf','BW4 Daily Cleaning Guide'],
-                  ['Franke_Fry_Dispenser_F3D3P.pdf','Franke Fry Dispenser F3D3P'],
-                  ['Freezers+Chillers.pdf','Freezers & Chillers'],
-                  ['KC_GB_UHC.PDF','KC GB UHC'],
-                  ['MerrychefOven.pdf','Merrychef Oven'],
-                  ['PR34DO1-DCFT Toaster-Daily Clean.pdf','Toaster Daily Clean'],
-                  ['SS_Floor_Cleaning_Closed.pdf','Floor Cleaning (Closed)'],
-                  ['SS_Toilets.pdf','Toilets'],
-                  ['Waterless_Urinals.pdf','Waterless Urinals'],
-                ].map(([f,l]) => resFile('Resources/Cleaning Cards/Closing/' + f, l)).join('')}
-              </div>
-            </div>
-
-            <!-- Daily -->
-            <div style="background:#f9f9f6;padding:8px 16px;border-bottom:1px solid #f0f0ec">
-              <div onclick="toggleResource('res-cleaning-daily')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-                <span style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em">Daily</span>
-                <span id="res-cleaning-daily-chevron" style="font-size:16px;color:#aaa;transition:transform 0.2s">›</span>
-              </div>
-              <div id="res-cleaning-daily" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:2px">
-                ${[
-                  ['4_Step_Cleaning.pdf','4 Step Cleaning'],
-                  ['62479 BOH Back Sinks MCD UK CARD.pdf','BOH Back Sinks'],
-                  ['Antunes Egg Cooker Cleaning.pdf','Antunes Egg Cooker Cleaning'],
-                  ['Cleaning_Card_GB_GRILLS_All_Types.pdf','Grills All Types'],
-                  ['Fryers_during_Filtering.pdf','Fryers During Filtering'],
-                  ['KC_GB_Dining_Area_Furniture.pdf','Dining Area Furniture'],
-                  ['Prince Castle-Ketchup Dispenser.pdf','Prince Castle Ketchup Dispenser'],
-                  ['Prince Castle-Mustard Dispenser.pdf','Prince Castle Mustard Dispenser'],
-                  ['SS_Dining_Area.pdf','Dining Area'],
-                  ['SS_Floor_cleaning_in_use.pdf','Floor Cleaning (In Use)'],
-                  ['SS_Self_Filtering_Vats.pdf','Self Filtering Vats'],
-                  ['Stainless.pdf','Stainless Steel'],
-                ].map(([f,l]) => resFile('Resources/Cleaning Cards/Daily/' + f, l)).join('')}
-              </div>
-            </div>
-
-            <!-- Weekly/Monthly/Quarterly -->
-            <div style="background:#f9f9f6;padding:8px 16px">
-              <div onclick="toggleResource('res-cleaning-wmq')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-                <span style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em">Weekly / Monthly / Quarterly</span>
-                <span id="res-cleaning-wmq-chevron" style="font-size:16px;color:#aaa;transition:transform 0.2s">›</span>
-              </div>
-              <div id="res-cleaning-wmq" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:2px">
-                ${[
-                  ['58496-02 NO THAW Cleaning MCD UK CARD.pdf','NO THAW Cleaning'],
-                  ['61646-01 McD_EN Grill Recovery Card.pdf','Grill Recovery Card'],
-                  ['61807 Washing Machines McD UK CARD.pdf','Washing Machines'],
-                  ['61813 Super Contact Cleaner McD UK CARD.pdf','Super Contact Cleaner'],
-                  ['61815.01 Dishwasher McD UK CARD.pdf','Dishwasher'],
-                  ['BE011-All Coffee Machines-Calibration.pdf','Coffee Machines Calibration'],
-                  ['BE022-Cornelius ABS-Weekly Ice Dispenser Cleaning.pdf','Ice Dispenser Cleaning'],
-                  ['BI293-BIC450-Weekly Clean.pdf','BIC450 Weekly Clean'],
-                  ['BI294-BIC450-Monthly Clean.pdf','BIC450 Monthly Clean'],
-                  ['BIB_Connectors_BE013.pdf','BIB Connectors'],
-                  ['Bucket_Bins.pdf','Bucket Bins'],
-                  ['Cark_Park_Spills_Mar12.pdf','Car Park Spills'],
-                  ['CarParks.pdf','Car Parks'],
-                  ['Ceiling_Light_Diffuser_Cleaning_Card_July_2014.pdf','Ceiling Light Diffuser'],
-                  ['Cleaning Card - Glass, Walls and Ceilings - New Multi-surface Tool.pdf','Glass, Walls & Ceilings'],
-                  ['Drain Cleaning - Bio-shield.pdf','Drain Cleaning Bio-shield'],
-                  ['IT_Equipment.pdf','IT Equipment'],
-                  ['KC_GB GrillsRecovery.pdf','Grills Recovery'],
-                  ['KC_GB_Conveyor Belt_PMC.pdf','Conveyor Belt PMC'],
-                  ['LED PANEL CLEANING CARD July 2023.pdf','LED Panel Cleaning'],
-                  ['Non Food Spill Clean Up.pdf','Non Food Spill Clean Up'],
-                  ['PR34WO1-DCFT Toaster-Weekly Clean.pdf','Toaster Weekly Clean'],
-                  ['Roof_Drainage.pdf','Roof Drainage'],
-                  ['SS_External_Areas.pdf','External Areas'],
-                  ['SS_External_Customer_Areas.pdf','External Customer Areas'],
-                  ['SS_General_Equipment_Back.pdf','General Equipment Back'],
-                  ['SS_General_Equipment_front.pdf','General Equipment Front'],
-                  ['SS_High_Level.pdf','High Level'],
-                  ['SS_Pulling_Fryers.pdf','Pulling Fryers'],
-                  ['SS_Stockroom.pdf','Stockroom'],
-                  ['SS_Walls+Doors.pdf','Walls & Doors'],
-                  ['SS140D-Carpigiani K3-Calibration.pdf','Carpigiani K3 Calibration'],
-                  ['SS141H-Carpigiani K3-Clean.pdf','Carpigiani K3 Clean'],
-                  ['SS141I-Carpigiani K3-Assemble.pdf','Carpigiani K3 Assemble'],
-                  ['SS142-All Models-Check Condition.pdf','All Models Check Condition'],
-                  ['SS144A-Carpagani K3-Clean Syrup.pdf','Carpigiani K3 Clean Syrup'],
-                  ['SSXXX-All Models-Red Bucket Use.pdf','All Models Red Bucket Use'],
-                  ['ST160A-Rapid Steamer-Delime Chamber.pdf','Rapid Steamer Delime Chamber'],
-                ].map(([f,l]) => resFile('Resources/Cleaning Cards/Weekly/Monthly/Quarterly/' + f, l)).join('')}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- OPERATIONS -->
-        <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
-          <div onclick="toggleResource('res-operations')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">⚙️</span>
-              <div style="font-size:14px;font-weight:600;color:#1a1a1a">Operations</div>
-            </div>
-            <span id="res-operations-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
-          </div>
-          <div id="res-operations" style="display:none;border-top:1px solid #f0f0ec;display:flex;flex-direction:column;gap:2px;padding:4px 0">
-            ${resFile('Resources/Operations/floorplan.pdf', '🗺️ Floor Plan')}
-            ${resFile('Resources/Operations/secondary-responsibilities.pdf', '📋 Secondary Responsibilities')}
-          </div>
-        </div>
-
-        <!-- PM -->
-        <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
-          <div onclick="toggleResource('res-pm')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">🔧</span>
-              <div style="font-size:14px;font-weight:600;color:#1a1a1a">PM</div>
-            </div>
-            <span id="res-pm-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
-          </div>
-          <div id="res-pm" style="display:none;border-top:1px solid #f0f0ec;display:flex;flex-direction:column;gap:2px;padding:4px 0">
-            ${[
-              ['BR080-Egg Cooker 1200-Calibration.pdf','Egg Cooker 1200 Calibration'],
-              ['BR081-Egg Utensils-Check Condition.pdf','Egg Utensils Check Condition'],
-              ['EL260-Electrical-Condition Check.pdf','Electrical Condition Check'],
-              ['FD030B-Franke F3DN-Monthly Clean.pdf','Franke F3DN Monthly Clean'],
-              ['FL173-Shortening Disposal Unit-Condition Check.pdf','Shortening Disposal Unit'],
-              ['FL174-OSCAR-Cleaning.pdf','OSCAR Cleaning'],
-              ['FR029-Fry Bagging Station-Condition Check.pdf','Fry Bagging Station'],
-              ['FR033-Franke Fry Dispenser-Clean Filter.pdf','Franke Fry Dispenser Filter'],
-              ['FR036-Frymaster Built in Filtering System-Replace 0rings.pdf','Frymaster Filtering System'],
-              ['HU065A-Prince Castle Pie Merchandiser-Calibration.pdf','Pie Merchandiser Calibration'],
-              ['MC096-Microwave Amana-Efficiency Test.pdf','Microwave Efficiency Test'],
-              ['MC097-Microwave Amana-Maintenance Check.pdf','Microwave Maintenance Check'],
-              ['OE273-TLoop Hearing System.pdf','T-Loop Hearing System'],
-              ['RE194-Main Freezer&Chiller-Check Condition.pdf','Main Freezer & Chiller'],
-              ['RE195-Refrigeration DC800-Check Condition.pdf','Refrigeration DC800'],
-              ['RE196-Refrigeration-Check Condition.pdf','Refrigeration Check'],
-              ['SS140-Taylor C602-Calibration.pdf','Taylor C602 Calibration'],
-              ['SS141F-Taylor C602-Clean.pdf','Taylor C602 Clean'],
-              ['SS141G-Taylor C602-Assemble.pdf','Taylor C602 Assemble'],
-              ['SS144-Taylor C602-Clean Syrup.pdf','Taylor C602 Clean Syrup'],
-              ['SSXXX-All Models-Red Bucket Use.pdf','Red Bucket Use'],
-              ['TS120-Muffin Toaster-Check Load Timers.pdf','Muffin Toaster Check Timers'],
-              ['TS121-Muffin Toaster-Maintenance.pdf','Muffin Toaster Maintenance'],
-            ].map(([f,l]) => resFile('Resources/PM/' + f, l)).join('')}
-          </div>
-        </div>
-
-      </div>
+      <div id="resources-container" style="padding:12px;display:flex;flex-direction:column;gap:10px"></div>
       <div class="bottom-pad"></div>
     </div>
 
@@ -1472,8 +1301,8 @@ function initApp() {
   initTodoListener();
   initCompletedShiftTypesListener();
   if (breakDays.length > 0) initBreakListener();
-  // Listen for break schedule uploaded by another device
   initBreakScheduleListener();
+  renderResources();
   showPage('shift');
 }
 
@@ -1503,7 +1332,7 @@ function updateDateTime() {
 
 // ─── RESOURCES ───────────────────────────────────────────────────────
 function resFile(path, label) {
-  const encoded = encodeURIComponent(path).replace(/%2F/g, '/');
+  const encoded = path.split('/').map(p => encodeURIComponent(p)).join('/');
   return `<a href="${encoded}" target="_blank" style="display:flex;align-items:center;gap:10px;padding:10px 16px;color:#333;text-decoration:none;border-bottom:1px solid #f9f9f6;font-size:13px">
     <span style="font-size:16px;flex-shrink:0">📄</span>
     <span style="flex:1;line-height:1.3">${label}</span>
@@ -1511,12 +1340,151 @@ function resFile(path, label) {
   </a>`;
 }
 
+function resSection(id, emoji, title, innerHtml) {
+  return `<div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
+    <div onclick="toggleResource('${id}')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${emoji}</span>
+        <div style="font-size:14px;font-weight:600;color:#1a1a1a">${title}</div>
+      </div>
+      <span id="${id}-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
+    </div>
+    <div id="${id}" style="display:none;border-top:1px solid #f0f0ec">${innerHtml}</div>
+  </div>`;
+}
+
+function resSubSection(id, title, filesHtml) {
+  return `<div style="background:#f9f9f6;border-bottom:1px solid #f0f0ec">
+    <div onclick="toggleResource('${id}')" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+      <span style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em">${title}</span>
+      <span id="${id}-chevron" style="font-size:16px;color:#aaa;transition:transform 0.2s">›</span>
+    </div>
+    <div id="${id}" style="display:none">${filesHtml}</div>
+  </div>`;
+}
+
+function renderResources() {
+  const BASE = 'Resources/';
+
+  const cleaningClosing = [
+    ['Cleaning Cards/Closing/57581-01 Prince Castle NexGen UHC MCD UK CARD.pdf','Prince Castle NexGen UHC'],
+    ['Cleaning Cards/Closing/61648-01 McD_EN Grill Daily All Types Card.pdf','Grill Daily All Types'],
+    ['Cleaning Cards/Closing/BE010-UCC BW4 Daily Cleaning & Troubleshooting Guide.pdf','BW4 Daily Cleaning Guide'],
+    ['Cleaning Cards/Closing/Franke_Fry_Dispenser_F3D3P.pdf','Franke Fry Dispenser F3D3P'],
+    ['Cleaning Cards/Closing/Freezers+Chillers.pdf','Freezers & Chillers'],
+    ['Cleaning Cards/Closing/KC_GB_UHC.PDF','KC GB UHC'],
+    ['Cleaning Cards/Closing/MerrychefOven.pdf','Merrychef Oven'],
+    ['Cleaning Cards/Closing/PR34DO1-DCFT Toaster-Daily Clean.pdf','Toaster Daily Clean'],
+    ['Cleaning Cards/Closing/SS_Floor_Cleaning_Closed.pdf','Floor Cleaning (Closed)'],
+    ['Cleaning Cards/Closing/SS_Toilets.pdf','Toilets'],
+    ['Cleaning Cards/Closing/Waterless_Urinals.pdf','Waterless Urinals'],
+  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const cleaningDaily = [
+    ['Cleaning Cards/Daily/4_Step_Cleaning.pdf','4 Step Cleaning'],
+    ['Cleaning Cards/Daily/62479 BOH Back Sinks MCD UK CARD.pdf','BOH Back Sinks'],
+    ['Cleaning Cards/Daily/Antunes Egg Cooker Cleaning.pdf','Antunes Egg Cooker Cleaning'],
+    ['Cleaning Cards/Daily/Cleaning_Card_GB_GRILLS_All_Types.pdf','Grills All Types'],
+    ['Cleaning Cards/Daily/Fryers_during_Filtering.pdf','Fryers During Filtering'],
+    ['Cleaning Cards/Daily/KC_GB_Dining_Area_Furniture.pdf','Dining Area Furniture'],
+    ['Cleaning Cards/Daily/Prince Castle-Ketchup Dispenser.pdf','Prince Castle Ketchup Dispenser'],
+    ['Cleaning Cards/Daily/Prince Castle-Mustard Dispenser.pdf','Prince Castle Mustard Dispenser'],
+    ['Cleaning Cards/Daily/SS_Dining_Area.pdf','Dining Area'],
+    ['Cleaning Cards/Daily/SS_Floor_cleaning_in_use.pdf','Floor Cleaning (In Use)'],
+    ['Cleaning Cards/Daily/SS_Self_Filtering_Vats.pdf','Self Filtering Vats'],
+    ['Cleaning Cards/Daily/Stainless.pdf','Stainless Steel'],
+  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const cleaningWMQ = [
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/58496-02 NO THAW Cleaning MCD UK CARD.pdf','NO THAW Cleaning'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/61646-01 McD_EN Grill Recovery Card.pdf','Grill Recovery Card'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/61807 Washing Machines McD UK CARD.pdf','Washing Machines'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/61813 Super Contact Cleaner McD UK CARD.pdf','Super Contact Cleaner'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/61815.01 Dishwasher McD UK CARD.pdf','Dishwasher'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/BE011-All Coffee Machines-Calibration.pdf','Coffee Machines Calibration'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/BE022-Cornelius ABS-Weekly Ice Dispenser Cleaning.pdf','Ice Dispenser Cleaning'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/BI293-BIC450-Weekly Clean.pdf','BIC450 Weekly Clean'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/BI294-BIC450-Monthly Clean.pdf','BIC450 Monthly Clean'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/BIB_Connectors_BE013.pdf','BIB Connectors'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Bucket_Bins.pdf','Bucket Bins'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Cark_Park_Spills_Mar12.pdf','Car Park Spills'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/CarParks.pdf','Car Parks'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Ceiling_Light_Diffuser_Cleaning_Card_July_2014.pdf','Ceiling Light Diffuser'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Cleaning Card - Glass, Walls and Ceilings - New Multi-surface Tool.pdf','Glass, Walls & Ceilings'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Drain Cleaning - Bio-shield.pdf','Drain Cleaning Bio-shield'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/IT_Equipment.pdf','IT Equipment'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/KC_GB GrillsRecovery.pdf','Grills Recovery'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/KC_GB_Conveyor Belt_PMC.pdf','Conveyor Belt PMC'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/LED PANEL CLEANING CARD July 2023.pdf','LED Panel Cleaning'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Non Food Spill Clean Up.pdf','Non Food Spill Clean Up'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/PR34WO1-DCFT Toaster-Weekly Clean.pdf','Toaster Weekly Clean'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/Roof_Drainage.pdf','Roof Drainage'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_External_Areas.pdf','External Areas'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_External_Customer_Areas.pdf','External Customer Areas'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_General_Equipment_Back.pdf','General Equipment Back'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_General_Equipment_front.pdf','General Equipment Front'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_High_Level.pdf','High Level'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_Pulling_Fryers.pdf','Pulling Fryers'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_Stockroom.pdf','Stockroom'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS_Walls+Doors.pdf','Walls & Doors'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS140D-Carpigiani K3-Calibration.pdf','Carpigiani K3 Calibration'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS141H-Carpigiani K3-Clean.pdf','Carpigiani K3 Clean'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS141I-Carpigiani K3-Assemble.pdf','Carpigiani K3 Assemble'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS142-All Models-Check Condition.pdf','All Models Check Condition'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SS144A-Carpagani K3-Clean Syrup.pdf','Carpigiani K3 Clean Syrup'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/SSXXX-All Models-Red Bucket Use.pdf','All Models Red Bucket Use'],
+    ['Cleaning Cards/Weekly/Monthly/Quarterly/ST160A-Rapid Steamer-Delime Chamber.pdf','Rapid Steamer Delime Chamber'],
+  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const cleaningInner =
+    resFile(BASE+'Cleaning Cards/Cleaning_Catalogue.pdf', '📄 Cleaning Catalogue') +
+    resSubSection('res-closing', 'Closing', cleaningClosing) +
+    resSubSection('res-daily', 'Daily', cleaningDaily) +
+    resSubSection('res-wmq', 'Weekly / Monthly / Quarterly', cleaningWMQ);
+
+  const operationsInner =
+    '<div style="padding:4px 0">' +
+    resFile(BASE+'Operations/floorplan.pdf', '🗺️ Floor Plan') +
+    resFile(BASE+'Operations/secondary-responsibilities.pdf', '📋 Secondary Responsibilities') +
+    '</div>';
+
+  const pmInner = '<div style="padding:4px 0">' + [
+    ['PM/BR080-Egg Cooker 1200-Calibration.pdf','Egg Cooker 1200 Calibration'],
+    ['PM/BR081-Egg Utensils-Check Condition.pdf','Egg Utensils Check Condition'],
+    ['PM/EL260-Electrical-Condition Check.pdf','Electrical Condition Check'],
+    ['PM/FD030B-Franke F3DN-Monthly Clean.pdf','Franke F3DN Monthly Clean'],
+    ['PM/FL173-Shortening Disposal Unit-Condition Check.pdf','Shortening Disposal Unit'],
+    ['PM/FL174-OSCAR-Cleaning.pdf','OSCAR Cleaning'],
+    ['PM/FR029-Fry Bagging Station-Condition Check.pdf','Fry Bagging Station'],
+    ['PM/FR033-Franke Fry Dispenser-Clean Filter.pdf','Franke Fry Dispenser Filter'],
+    ['PM/FR036-Frymaster Built in Filtering System-Replace 0rings.pdf','Frymaster Filtering System'],
+    ['PM/HU065A-Prince Castle Pie Merchandiser-Calibration.pdf','Pie Merchandiser Calibration'],
+    ['PM/MC096-Microwave Amana-Efficiency Test.pdf','Microwave Efficiency Test'],
+    ['PM/MC097-Microwave Amana-Maintenance Check.pdf','Microwave Maintenance Check'],
+    ['PM/OE273-TLoop Hearing System.pdf','T-Loop Hearing System'],
+    ['PM/RE194-Main Freezer&Chiller-Check Condition.pdf','Main Freezer & Chiller'],
+    ['PM/RE195-Refrigeration DC800-Check Condition.pdf','Refrigeration DC800'],
+    ['PM/RE196-Refrigeration-Check Condition.pdf','Refrigeration Check'],
+    ['PM/SS140-Taylor C602-Calibration.pdf','Taylor C602 Calibration'],
+    ['PM/SS141F-Taylor C602-Clean.pdf','Taylor C602 Clean'],
+    ['PM/SS141G-Taylor C602-Assemble.pdf','Taylor C602 Assemble'],
+    ['PM/SS144-Taylor C602-Clean Syrup.pdf','Taylor C602 Clean Syrup'],
+    ['PM/SSXXX-All Models-Red Bucket Use.pdf','Red Bucket Use'],
+    ['PM/TS120-Muffin Toaster-Check Load Timers.pdf','Muffin Toaster Check Timers'],
+    ['PM/TS121-Muffin Toaster-Maintenance.pdf','Muffin Toaster Maintenance'],
+  ].map(([f,l]) => resFile(BASE+f, l)).join('') + '</div>';
+
+  document.getElementById('resources-container').innerHTML =
+    resSection('res-cleaning', '🧹', 'Cleaning Cards', cleaningInner) +
+    resSection('res-operations', '⚙️', 'Operations', operationsInner) +
+    resSection('res-pm', '🔧', 'PM', pmInner);
+}
+
 function toggleResource(id) {
   const el = document.getElementById(id);
   const chevron = document.getElementById(id + '-chevron');
   if (!el) return;
-  const isOpen = el.style.display === 'block' || (el.style.display !== 'none' && el.style.display !== '');
-  // For nested sub-sections that start hidden
+  const isOpen = el.style.display !== 'none' && el.style.display !== '';
   el.style.display = isOpen ? 'none' : 'block';
   if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
