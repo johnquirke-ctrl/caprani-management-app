@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Nenagh Ops">
-<title>Nenagh — Ops App</title>
+<meta name="apple-mobile-web-app-title" content="Caprani Mgmt">
+<title>Caprani Management App</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;max-width:600px;margin:0 auto}
@@ -208,7 +208,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div class="login-logo">🍟</div>
-  <div class="login-title">Nenagh Ops</div>
+  <div class="login-title">Caprani</div>
   <div class="login-sub">Sign in to continue</div>
   <select class="login-select" id="manager-select">
     <option value="">Select your name...</option>
@@ -226,7 +226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="app-screen">
   <div class="top-bar">
     <div>
-      <div class="top-bar-title">Nenagh Ops</div>
+      <div class="top-bar-title">Caprani</div>
       <div class="top-bar-user" id="top-bar-user"></div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
@@ -566,11 +566,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 // ─── DATA ───────────────────────────────────────────────────────────
+// PINs stored as SHA-256 hashes — never plain text in source
 const MANAGERS = {
-  "Anna Beleznai": "6481",
-  "Dora Danko":    "7972",
-  "John Quirke":   "5081"
+  "Anna Beleznai": "fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587",
+  "Dora Danko":    "4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc",
+  "John Quirke":   "778761ba6fc79beab2e951ec681c2ce8d77a1948bfe3d53dd282a09d4abc0405"
 };
+
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 // PRE-SHIFT tasks — area, name, priority (a/b/c/d)
 const SHIFT_TASKS = [
@@ -793,10 +799,10 @@ let currentPage = 'shift';
 
 // Persisted in localStorage
 function getState() {
-  try { return JSON.parse(localStorage.getItem('nenagh_ops') || '{}'); } catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('caprani_ops') || '{}'); } catch(e) { return {}; }
 }
 function saveState(s) {
-  localStorage.setItem('nenagh_ops', JSON.stringify(s));
+  localStorage.setItem('caprani_ops', JSON.stringify(s));
 }
 
 function todayKey() {
@@ -806,15 +812,15 @@ function todayKey() {
 // ─── LOGIN ──────────────────────────────────────────────────────────
 const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in ms
 
-function doLogin() {
+async function doLogin() {
   const name = document.getElementById('manager-select').value;
   const pin  = document.getElementById('pin-input').value;
   const err  = document.getElementById('login-error');
   if (!name || !MANAGERS[name]) { err.style.display='block'; err.textContent='Please select your name.'; return; }
-  if (pin !== MANAGERS[name])   { err.style.display='block'; err.textContent='Incorrect PIN. Please try again.'; return; }
+  const hashed = await hashPin(pin);
+  if (hashed !== MANAGERS[name]) { err.style.display='block'; err.textContent='Incorrect PIN. Please try again.'; return; }
   err.style.display='none';
   currentManager = name;
-  // Save session to localStorage
   const s = getState();
   s.session = { manager: name, loginTime: Date.now() };
   saveState(s);
@@ -833,7 +839,7 @@ function doLogout() {
   }
   delete s.session;
   saveState(s);
-  sessionStorage.removeItem('nenaghOpsActive');
+  sessionStorage.removeItem('capraniOpsActive');
   currentManager = null;
   currentShiftType = null;
   document.getElementById('login-screen').style.display='flex';
@@ -1550,8 +1556,12 @@ function renderTodo() {
   } else {
     if (open.length > 0) {
       // Sort by priority: a first, then b, c, d, then no priority
-      const priOrder = {a:0,b:1,c:2,d:3,undefined:4};
-      const sorted = [...todo].filter(t=>!t.done).sort((a,b) => (priOrder[a.priority]||4) - (priOrder[b.priority]||4));
+      const priOrder = {a:0, b:1, c:2, d:3};
+      const sorted = [...todo].filter(t=>!t.done).sort((a,b) => {
+        const pa = a.priority != null ? (priOrder[a.priority] ?? 4) : 4;
+        const pb = b.priority != null ? (priOrder[b.priority] ?? 4) : 4;
+        return pa - pb;
+      });
       html += `<div class="section-header"><span>Outstanding</span><span>${open.length} remaining</span></div>`;
       sorted.forEach(t => {
         const i = todo.indexOf(t);
@@ -2816,7 +2826,7 @@ function cleanupOldData() {
   // Auto-login only if this is a PAGE REFRESH (same browser tab session),
   // not a fresh open. sessionStorage is cleared when the tab is closed or
   // a new tab is opened, but survives a refresh.
-  const isRefresh = sessionStorage.getItem('nenaghOpsActive') === 'true';
+  const isRefresh = sessionStorage.getItem('capraniOpsActive') === 'true';
   const s = getState();
   if (isRefresh && s.session && s.session.manager && MANAGERS[s.session.manager]) {
     const elapsed = Date.now() - s.session.loginTime;
@@ -2831,7 +2841,7 @@ function cleanupOldData() {
     } else {
       delete s.session;
       saveState(s);
-      sessionStorage.removeItem('nenaghOpsActive');
+      sessionStorage.removeItem('capraniOpsActive');
     }
   } else if (!isRefresh) {
     // Fresh load — clear any stale session so no auto-login
@@ -2839,7 +2849,7 @@ function cleanupOldData() {
     saveState(s);
   }
   // Mark this tab as active so refreshes work
-  sessionStorage.setItem('nenaghOpsActive', 'true');
+  sessionStorage.setItem('capraniOpsActive', 'true');
 })();
 </script>
 </body>
