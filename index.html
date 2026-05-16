@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Caprani Mgmt">
 <title>Caprani Management App</title>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;max-width:600px;margin:0 auto}
@@ -239,10 +242,106 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="top-bar">
     <div>
       <div class="top-bar-title">Caprani</div>
-      <div class="top-bar-user" id="top-bar-user"></div>
+      <div class="top-bar-user" id="top-bar-user" onclick="openProfile()" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px"></div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
   </div>
+
+<!-- PROFILE MODAL -->
+<div id="profile-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;animation:popIn 0.2s ease">
+    <div style="background:#d4000a;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:16px;font-weight:700;color:#fff">My Profile</div>
+      <button onclick="closeProfile()" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:14px">
+
+      <div style="font-size:12px;color:#888;background:#f5f5f0;border-radius:8px;padding:8px 12px;line-height:1.5">
+        Changes take effect on your next login. Your current session is not affected.
+      </div>
+
+      <!-- Change username -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Change username</div>
+        <input type="text" id="profile-new-username" placeholder="New username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;box-sizing:border-box">
+        <div style="font-size:11px;color:#aaa;margin-top:4px">Enter your current PIN to confirm</div>
+        <input type="password" id="profile-username-pin" placeholder="Current PIN" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;margin-top:6px;box-sizing:border-box">
+        <button onclick="saveNewUsername()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;background:#1D9E75;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Update username</button>
+        <div id="profile-username-msg" style="font-size:12px;margin-top:6px;text-align:center;display:none"></div>
+      </div>
+
+      <div style="border-top:1px solid #f0f0ec"></div>
+
+      <!-- Change PIN -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Change PIN</div>
+        <input type="password" id="profile-current-pin" placeholder="Current PIN" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;box-sizing:border-box">
+        <input type="password" id="profile-new-pin" placeholder="New PIN (4 digits)" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;margin-top:6px;box-sizing:border-box">
+        <input type="password" id="profile-confirm-pin" placeholder="Confirm new PIN" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;margin-top:6px;box-sizing:border-box">
+        <button onclick="saveNewPin()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;background:#1D9E75;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Update PIN</button>
+        <div id="profile-pin-msg" style="font-size:12px;margin-top:6px;text-align:center;display:none"></div>
+      </div>
+
+      <div id="profile-owner-section" style="display:none">
+        <div style="border-top:1px solid #f0f0ec"></div>
+        <button onclick="openStaffReport()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:14px;color:#555;cursor:pointer;font-family:inherit;margin-top:2px">👥 View staff report</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- STAFF REPORT MODAL -->
+<div id="staff-report-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:400px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;animation:popIn 0.2s ease">
+    <div style="background:#1a1a1a;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-size:16px;font-weight:700;color:#fff">👥 Staff Report</div>
+      <button onclick="closeStaffReport()" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="overflow-y:auto;padding:1rem">
+      <div id="staff-report-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div id="edit-user-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;animation:popIn 0.2s ease">
+    <div style="background:#1a1a1a;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:16px;font-weight:700;color:#fff">Edit — <span id="edit-user-label"></span></div>
+      <button onclick="closeEditUser()" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;color:#888;background:#f5f5f0;border-radius:8px;padding:8px 12px;line-height:1.5">
+        Changes take effect on the user's next login.
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px">New username <span style="font-weight:400;color:#aaa">(leave blank to keep current)</span></div>
+        <input type="text" id="edit-user-username" placeholder="New username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px">New PIN <span style="font-weight:400;color:#aaa">(leave blank to keep current)</span></div>
+        <input type="password" id="edit-user-pin" placeholder="New PIN (4 digits)" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;box-sizing:border-box">
+        <input type="password" id="edit-user-pin-confirm" placeholder="Confirm new PIN" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;margin-top:6px;box-sizing:border-box">
+      </div>
+      <div style="border-top:1px solid #f0f0ec;padding-top:10px">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:5px">Your owner PIN to confirm</div>
+        <input type="password" id="edit-user-owner-pin" placeholder="Your PIN" inputmode="numeric" maxlength="4"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <button onclick="saveEditUser()" style="width:100%;padding:11px;border-radius:8px;background:#d4000a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Save changes</button>
+      <div id="edit-user-msg" style="font-size:12px;text-align:center;display:none"></div>
+    </div>
+  </div>
+</div>
 
   <div class="content">
 
@@ -509,14 +608,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
 
       <div id="breaks-upload-area" style="margin:12px;border:2px dashed #ddd;border-radius:12px;background:#fff;padding:2rem 1rem;text-align:center;cursor:pointer"
-        onclick="document.getElementById('breaks-file-input').click()"
-        ondragover="event.preventDefault();this.style.borderColor='#d4000a'"
+        onclick="canUploadBreaksPDF() && document.getElementById('breaks-file-input').click()"
+        ondragover="event.preventDefault();if(canUploadBreaksPDF())this.style.borderColor='#d4000a'"
         ondragleave="this.style.borderColor='#ddd'"
-        ondrop="event.preventDefault();this.style.borderColor='#ddd';handleBreaksPDF(event.dataTransfer.files[0])">
+        ondrop="event.preventDefault();this.style.borderColor='#ddd';if(canUploadBreaksPDF())handleBreaksPDF(event.dataTransfer.files[0])">
         <div style="font-size:36px;margin-bottom:8px">📄</div>
         <div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Drop PDF here or tap to upload</div>
         <div style="font-size:13px;color:#888">Weekly schedule PDF from your scheduling system</div>
         <input type="file" id="breaks-file-input" accept=".pdf" style="display:none" onchange="handleBreaksPDF(this.files[0])">
+      </div>
+
+      <!-- Area leaders see this instead of the upload area -->
+      <div id="breaks-no-upload-msg" style="display:none;margin:12px;border-radius:12px;background:#f5f5f0;padding:1.25rem;text-align:center">
+        <div style="font-size:28px;margin-bottom:6px">📋</div>
+        <div style="font-size:14px;font-weight:600;color:#555;margin-bottom:4px">Schedule loaded by management</div>
+        <div style="font-size:13px;color:#888">The weekly break sheet will appear here once a manager uploads the schedule.</div>
       </div>
 
       <div id="breaks-loading" style="display:none;padding:1.5rem;text-align:center;color:#888;font-size:14px">
@@ -577,6 +683,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div><!-- end app-screen -->
 
 <script>
+// ─── FIREBASE ────────────────────────────────────────────────────────
+if (typeof firebase === 'undefined') {
+  console.error('Firebase SDK failed to load — check network connection');
+}
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyBO2BRnpAEfNL0gQzHyUqNgOWVR9v2OcxM",
+  authDomain:        "caprani-management.firebaseapp.com",
+  databaseURL:       "https://caprani-management-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "caprani-management",
+  storageBucket:     "caprani-management.firebasestorage.app",
+  messagingSenderId: "626453045248",
+  appId:             "1:626453045248:web:2a0161b10942910e10f8e5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ─── FIREBASE HELPERS ────────────────────────────────────────────────
+// Base path for all restaurant data: restaurants/{restaurantId}/{date}/...
+function fbPath(...parts) {
+  return ['restaurants', currentRestaurantId, ...parts].join('/');
+}
+
+// Write a value to Firebase
+function fbSet(path, value) {
+  if (!currentRestaurantId) return Promise.resolve();
+  return db.ref(fbPath(...path.split('/'))).set(value).catch(e => console.error('FB write error:', e));
+}
+
+// Read once from Firebase
+function fbGet(path) {
+  if (!currentRestaurantId) return Promise.resolve(null);
+  return db.ref(fbPath(...path.split('/'))).get().then(snap => snap.exists() ? snap.val() : null).catch(() => null);
+}
+
+// Listen to a path in real-time
+function fbListen(path, callback) {
+  if (!currentRestaurantId) return () => {};
+  const ref = db.ref(fbPath(...path.split('/')));
+  ref.on('value', snap => callback(snap.exists() ? snap.val() : null));
+  return () => ref.off('value');
+}
+
 // ─── DATA ───────────────────────────────────────────────────────────
 // ─── RESTAURANTS ─────────────────────────────────────────────────────
 // All sensitive data is SHA-256 hashed — never plain text in source
@@ -593,32 +743,155 @@ const RESTAURANTS = {
 
 // ─── USERS ────────────────────────────────────────────────────────────
 // username, pin and displayName are all SHA-256 hashed
-// restaurants: array of restaurant IDs this user has access to
+// name and usernameLabel are readable — shown only to owner in reports
 // role: owner | salaried | shift_manager | area_leader
+const ROLE_LABELS = {
+  owner:          'Owner',
+  salaried:       'Salaried',
+  shift_manager:  'Shift Manager',
+  area_leader:    'Area Leader'
+};
+
 const USERS = [
   {
-    username:    'c84d384f2a25cca2a8fde5eb61b0f81f728e5f778a232211b176ea80143877bc', // jq
-    pin:         '778761ba6fc79beab2e951ec681c2ce8d77a1948bfe3d53dd282a09d4abc0405', // 5081
-    displayName: '2021d7d1f5b2edaab4e301ea612203ca1884559d2b186419487cf846abc86db6', // John Quirke
-    label:       'JQ',
-    role:        'owner',
-    restaurants: ['7131', '7177']
+    username:      'c84d384f2a25cca2a8fde5eb61b0f81f728e5f778a232211b176ea80143877bc', // jq
+    pin:           '778761ba6fc79beab2e951ec681c2ce8d77a1948bfe3d53dd282a09d4abc0405', // 5081
+    displayName:   '2021d7d1f5b2edaab4e301ea612203ca1884559d2b186419487cf846abc86db6', // John Quirke
+    label:         'JQ',
+    name:          'John Quirke',
+    usernameLabel: 'jq',
+    role:          'owner',
+    restaurants:   ['7131', '7177']
   },
   {
-    username:    '9b7ecc6eeb83abf9ade10fe38865df4499be3568dcc507ae2ec3b44989cb0093', // dd
-    pin:         '4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc', // 7972
-    displayName: 'ea0246624bc061875ee6d98e08171a6b2ca419fa3b3818986da5063b6d027124', // Dora Danko
-    label:       'DD',
-    role:        'salaried',
-    restaurants: ['7131']
+    username:      '9b7ecc6eeb83abf9ade10fe38865df4499be3568dcc507ae2ec3b44989cb0093', // dd
+    pin:           '4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc', // 7972
+    displayName:   'ea0246624bc061875ee6d98e08171a6b2ca419fa3b3818986da5063b6d027124', // Dora Danko
+    label:         'DD',
+    name:          'Dora Danko',
+    usernameLabel: 'dd',
+    role:          'salaried',
+    restaurants:   ['7131']
   },
   {
-    username:    'fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603', // ab
-    pin:         'fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587', // 6481
-    displayName: '22cbfe0aa93fe51165c3f566c1717e349164494dd06108e1f5600416eefb6e0b', // Anna Beleznai
-    label:       'AB',
-    role:        'shift_manager',
-    restaurants: ['7131']
+    username:      'fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603', // ab
+    pin:           'fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587', // 6481
+    displayName:   '22cbfe0aa93fe51165c3f566c1717e349164494dd06108e1f5600416eefb6e0b', // Anna Beleznai
+    label:         'AB',
+    name:          'Anna Beleznai',
+    usernameLabel: 'ab',
+    role:          'shift_manager',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '7f093592aebbb47767b5655699cdab8c86c4b24f5c93e3b22a3c2538856e9bf1', // ak
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '49833c804be0351528c61e575421d27c70ade4a676e7d2e3506eb662ae0bf942', // Anna Kutserak
+    label:         'AK',
+    name:          'Anna Kutserak',
+    usernameLabel: 'ak',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '3d099d0f13df9d0bb4427a6ce99d61b988861761e286d6e34b17d6371b46b13f', // bo
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '16d81f34e227b976841b3de8175aab729a93b1680034440f83c6f7186e483036', // Brian Owens
+    label:         'BO',
+    name:          'Brian Owens',
+    usernameLabel: 'bo',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
+    username:      'f9c7af7ebcbf098b9f5f37361d1b168bb2e5b98d930ceef0f055377a8c94db61', // ds
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   'c93889dd5b157de95804bf44e8668e6cb038cecc8a8b2ace868ac610e4934a9a', // Daniel Strachan
+    label:         'DS',
+    name:          'Daniel Strachan',
+    usernameLabel: 'ds',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
+    username:      'c380779f6175766fdbe90940851fff3995d343c63bbb82f816843c1d5100865e', // fg
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   'e29aed720bc32b8a775ee8478134ecc8cbefc8277497818b5c252ad2a681f94d', // Fergal Giblin
+    label:         'FG',
+    name:          'Fergal Giblin',
+    usernameLabel: 'fg',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '72a7ab318788b3628e9f10ad3dcb0ee63eeb1dd0ce0f246fdab0740a391f8fae', // ik
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   'b3c14de3552b630365a60a208c44b1ad28d733bc886131dab20651181705b944', // Iryna Koloskova
+    label:         'IK',
+    name:          'Iryna Koloskova',
+    usernameLabel: 'ik',
+    role:          'shift_manager',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '9732c83e3e03fffde2ee65a9d826df8c4dd623c27fb92b952fe62a02f0726f87', // jp
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '49312646d6137d90b079d17aa8f8ea4e54e5863986e1e8928eaee59233547f25', // Jim Paxman
+    label:         'JP',
+    name:          'Jim Paxman',
+    usernameLabel: 'jp',
+    role:          'shift_manager',
+    restaurants:   ['7131']
+  },
+  {
+    username:      'd3f3fa6892497db10a2417fce9b553464cc5d07718419de8b67e73e460c7daab', // kl
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '349fad7436027a25e39a588c9cb48285bfba77573faafec9dd71991a7f3a4ac0', // Katie Laffan
+    label:         'KL',
+    name:          'Katie Laffan',
+    usernameLabel: 'kl',
+    role:          'salaried',
+    restaurants:   ['7131', '7177']
+  },
+  {
+    username:      'a9f615c4e7d33cf9a6a23ab8be8800eb0cf68410f011953a4bfa64e1c372f734', // lh
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '929184caa69b0985481f211dc4f4773dc8b0bf328d1e425a9b553b94f540482d', // Liam Hayes
+    label:         'LH',
+    name:          'Liam Hayes',
+    usernameLabel: 'lh',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '6194e73eb25916046397e515de98f4e4357e06af9f3054d347ffe82aadfd8bf2', // nr
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   '3d6cb36d3a649d3057d8850d5ffa3aee48827f7709cea72c5c93cec09814a699', // Nathan Ryan
+    label:         'NR',
+    name:          'Nathan Ryan',
+    usernameLabel: 'nr',
+    role:          'shift_manager',
+    restaurants:   ['7131']
+  },
+  {
+    username:      '571b0e35550136585f653a70460974d32f85879142300ecb361eff423ac62cd4', // rs
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   'f81fd0b6d985bd3d7c4ea0db203985dbe772e29bf36a73318d387b7249057cb0', // Rebecca Simmons
+    label:         'RS',
+    name:          'Rebecca Simmons',
+    usernameLabel: 'rs',
+    role:          'salaried',
+    restaurants:   ['7131', '7177']
+  },
+  {
+    username:      '03042cf8100db386818cee4ff0f2972431a62ed78edbd09ac08accfabbefd818', // sd
+    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    displayName:   'c54a781788fba3cf44960abc2563b5fd1f4ed691f9ab0b29a3e2334b26b1692e', // Scott Daly
+    label:         'SD',
+    name:          'Scott Daly',
+    usernameLabel: 'sd',
+    role:          'shift_manager',
+    restaurants:   ['7131']
   }
 ];
 
@@ -898,13 +1171,15 @@ async function doLogin() {
 
   const hashedUsername = await hashString(username);
   const hashedPin      = await hashString(pin);
+  const overrides      = getProfileOverrides();
 
-  // Find matching user who has access to this restaurant
-  const user = USERS.find(u =>
-    u.username === hashedUsername &&
-    u.pin === hashedPin &&
-    u.restaurants.includes(rid)
-  );
+  // Find matching user — check overrides first, then source defaults
+  const user = USERS.find(u => {
+    if (!u.restaurants.includes(rid)) return false;
+    const effectiveUsername = overrides[u.label + '_username'] || u.username;
+    const effectivePin      = overrides[u.label + '_pin']      || u.pin;
+    return hashedUsername === effectiveUsername && hashedPin === effectivePin;
+  });
 
   if (!user) {
     err.style.display='block';
@@ -972,7 +1247,15 @@ function initApp() {
     selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
       || breakDays.find(d => d.startsWith(todayShort))
       || breakDays[0];
-    document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+    if (canUploadBreaksPDF()) {
+      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+      document.getElementById('breaks-upload-area').style.display = 'block';
+      document.getElementById('breaks-no-upload-msg').style.display = 'none';
+    } else {
+      document.getElementById('breaks-upload-area').style.display = 'none';
+      document.getElementById('breaks-no-upload-msg').style.display = 'block';
+      document.getElementById('breaks-no-upload-msg').innerHTML = '<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#1D9E75;margin-bottom:4px">Schedule loaded</div><div style="font-size:13px;color:#888">The weekly break sheet is ready.</div>';
+    }
     document.getElementById('breaks-day-selector').style.display = 'block';
     document.getElementById('breaks-add-btn').style.display = 'block';
     renderBreakDaySelector();
@@ -995,10 +1278,14 @@ function initApp() {
   buildShiftFilters();
   buildCleaningFilters();
   renderShift();
-  renderTodo();
   renderCleaning();
-  renderToilet();
   restoreShiftType();
+  applyRoleRestrictions();
+  // Start Firebase real-time listeners
+  initToiletListener();
+  initCleaningListener();
+  initTodoListener();
+  if (breakDays.length > 0) initBreakListener();
   showPage('shift');
 }
 
@@ -1035,7 +1322,253 @@ function showPage(page) {
   document.getElementById('nav-'+page).classList.add('active');
 }
 
-// ─── SHIFT CHECKLIST ────────────────────────────────────────────────
+// ─── PROFILE ─────────────────────────────────────────────────────────
+function openProfile() {
+  document.getElementById('profile-overlay').style.display = 'flex';
+  document.getElementById('profile-new-username').value = '';
+  document.getElementById('profile-username-pin').value = '';
+  document.getElementById('profile-current-pin').value = '';
+  document.getElementById('profile-new-pin').value = '';
+  document.getElementById('profile-confirm-pin').value = '';
+  document.getElementById('profile-username-msg').style.display = 'none';
+  document.getElementById('profile-pin-msg').style.display = 'none';
+  // Show staff report button for owners only
+  const user = getCurrentUserEntry();
+  document.getElementById('profile-owner-section').style.display = user && user.role === 'owner' ? 'block' : 'none';
+}
+
+function openStaffReport() {
+  const overrides = getProfileOverrides();
+
+  // Group users by restaurant
+  const restaurantGroups = {};
+  Object.entries(RESTAURANTS).forEach(([id, r]) => { restaurantGroups[id] = []; });
+
+  USERS.forEach(u => {
+    u.restaurants.forEach(rid => {
+      if (restaurantGroups[rid]) {
+        // Get current username (override or default)
+        const currentUsername = overrides[u.label + '_username']
+          ? '(custom — changed by user)'
+          : u.usernameLabel;
+        restaurantGroups[rid].push({ ...u, currentUsername });
+      }
+    });
+  });
+
+  let html = '';
+  const roleOrder = { owner: 0, salaried: 1, shift_manager: 2, area_leader: 3 };
+
+  Object.entries(restaurantGroups).forEach(([rid, users]) => {
+    if (users.length === 0) return;
+    users.sort((a, b) => {
+      const roleDiff = (roleOrder[a.role] ?? 4) - (roleOrder[b.role] ?? 4);
+      if (roleDiff !== 0) return roleDiff;
+      return a.name.localeCompare(b.name);
+    });
+    html += `<div style="margin-bottom:1.25rem">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">${RESTAURANTS[rid].label} (${rid})</div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid #e5e5e0">`;
+    users.forEach((u, i) => {
+      const border = i > 0 ? 'border-top:1px solid #f0f0ec;' : '';
+      const roleLabel = ROLE_LABELS[u.role] || u.role;
+      const usernameDisplay = overrides[u.label + '_username'] ? u.currentUsername : u.usernameLabel;
+      html += `<div style="padding:10px 12px;${border}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#1a1a1a">${u.name}</div>
+            <div style="font-size:12px;color:#888;margin-top:2px">@${usernameDisplay}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${{owner:'#FCEBEB',salaried:'#E6F1FB',shift_manager:'#EAF3DE',area_leader:'#FAEEDA'}[u.role]};color:${{owner:'#A32D2D',salaried:'#185FA5',shift_manager:'#3A7D1E',area_leader:'#854F0B'}[u.role]}">${roleLabel}</span>
+            <button onclick="openEditUser('${u.label}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;color:#555">Edit</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          ${u.restaurants.map(r => `<span style="font-size:10px;background:#f0f0ec;color:#666;padding:2px 7px;border-radius:10px">${RESTAURANTS[r]?.label || r}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  document.getElementById('staff-report-content').innerHTML = html;
+  document.getElementById('staff-report-overlay').style.display = 'flex';
+}
+
+function closeStaffReport() {
+  document.getElementById('staff-report-overlay').style.display = 'none';
+}
+
+let editingUserLabel = null;
+
+function openEditUser(label) {
+  editingUserLabel = label;
+  const user = USERS.find(u => u.label === label);
+  const overrides = getProfileOverrides();
+  const currentUsername = overrides[label + '_username'] ? '(custom)' : user.usernameLabel;
+  document.getElementById('edit-user-label').textContent = user.name + ' (' + label + ')';
+  document.getElementById('edit-user-username').value = '';
+  document.getElementById('edit-user-username').placeholder = 'Current: ' + currentUsername;
+  document.getElementById('edit-user-pin').value = '';
+  document.getElementById('edit-user-pin-confirm').value = '';
+  document.getElementById('edit-user-owner-pin').value = '';
+  document.getElementById('edit-user-msg').style.display = 'none';
+  document.getElementById('edit-user-overlay').style.display = 'flex';
+}
+
+function closeEditUser() {
+  document.getElementById('edit-user-overlay').style.display = 'none';
+  editingUserLabel = null;
+}
+
+async function saveEditUser() {
+  const msg         = document.getElementById('edit-user-msg');
+  const newUsername = document.getElementById('edit-user-username').value.trim();
+  const newPin      = document.getElementById('edit-user-pin').value.trim();
+  const confirmPin  = document.getElementById('edit-user-pin-confirm').value.trim();
+  const ownerPin    = document.getElementById('edit-user-owner-pin').value.trim();
+
+  if (!ownerPin) { showProfileMsg(msg, '⚠ Please enter your owner PIN to confirm.', false); return; }
+
+  // Verify owner's own PIN
+  const ownerUser = getCurrentUserEntry();
+  const hashedOwnerPin = await hashString(ownerPin);
+  if (hashedOwnerPin !== getEffectivePinHash(ownerUser.label)) {
+    showProfileMsg(msg, '⚠ Incorrect owner PIN.', false); return;
+  }
+
+  if (!newUsername && !newPin) {
+    showProfileMsg(msg, '⚠ Enter a new username or PIN (or both).', false); return;
+  }
+
+  const overrides = getProfileOverrides();
+  let changes = [];
+
+  if (newUsername) {
+    if (newUsername.length < 2) { showProfileMsg(msg, '⚠ Username must be at least 2 characters.', false); return; }
+    overrides[editingUserLabel + '_username'] = await hashString(newUsername);
+    changes.push('username');
+  }
+
+  if (newPin) {
+    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) { showProfileMsg(msg, '⚠ PIN must be exactly 4 digits.', false); return; }
+    if (newPin !== confirmPin) { showProfileMsg(msg, '⚠ PINs do not match.', false); return; }
+    overrides[editingUserLabel + '_pin'] = await hashString(newPin);
+    changes.push('PIN');
+  }
+
+  saveProfileOverrides(overrides);
+  showProfileMsg(msg, `✓ ${changes.join(' and ')} updated for ${editingUserLabel}. Takes effect on next login.`, true);
+  document.getElementById('edit-user-username').value = '';
+  document.getElementById('edit-user-pin').value = '';
+  document.getElementById('edit-user-pin-confirm').value = '';
+  document.getElementById('edit-user-owner-pin').value = '';
+
+  // Refresh the staff report in background
+  setTimeout(openStaffReport, 800);
+}
+
+function closeProfile() {
+  document.getElementById('profile-overlay').style.display = 'none';
+}
+
+function getProfileOverrides() {
+  try { return JSON.parse(localStorage.getItem('caprani_profile_overrides') || '{}'); } catch(e) { return {}; }
+}
+function saveProfileOverrides(o) {
+  localStorage.setItem('caprani_profile_overrides', JSON.stringify(o));
+}
+
+// Find the current user's USERS entry by matching their label
+function getCurrentUserEntry() {
+  return USERS.find(u => u.label === currentManager);
+}
+
+function canUploadBreaksPDF() {
+  const user = getCurrentUserEntry();
+  return user && user.role !== 'area_leader';
+}
+
+function applyRoleRestrictions() {
+  const canUpload = canUploadBreaksPDF();
+  document.getElementById('breaks-upload-area').style.display    = canUpload ? 'block' : 'none';
+  document.getElementById('breaks-no-upload-msg').style.display  = canUpload ? 'none'  : 'block';
+}
+
+// Get effective hashed PIN for current user (override takes priority)
+function getEffectivePinHash() {
+  const overrides = getProfileOverrides();
+  const user = getCurrentUserEntry();
+  if (!user) return null;
+  return overrides[user.label + '_pin'] || user.pin;
+}
+
+// Get effective hashed username for current user
+function getEffectiveUsernameHash() {
+  const overrides = getProfileOverrides();
+  const user = getCurrentUserEntry();
+  if (!user) return null;
+  return overrides[user.label + '_username'] || user.username;
+}
+
+async function saveNewUsername() {
+  const newUsername = document.getElementById('profile-new-username').value.trim();
+  const confirmPin  = document.getElementById('profile-username-pin').value.trim();
+  const msg         = document.getElementById('profile-username-msg');
+
+  if (!newUsername) { showProfileMsg(msg, '⚠ Please enter a new username.', false); return; }
+  if (newUsername.length < 2) { showProfileMsg(msg, '⚠ Username must be at least 2 characters.', false); return; }
+  if (!confirmPin) { showProfileMsg(msg, '⚠ Please enter your current PIN to confirm.', false); return; }
+
+  const hashedPin = await hashString(confirmPin);
+  if (hashedPin !== getEffectivePinHash()) {
+    showProfileMsg(msg, '⚠ Incorrect PIN.', false); return;
+  }
+
+  const hashedUsername = await hashString(newUsername);
+  const overrides = getProfileOverrides();
+  const user = getCurrentUserEntry();
+  overrides[user.label + '_username'] = hashedUsername;
+  saveProfileOverrides(overrides);
+  showProfileMsg(msg, '✓ Username updated! Takes effect on next login.', true);
+  document.getElementById('profile-new-username').value = '';
+  document.getElementById('profile-username-pin').value = '';
+}
+
+async function saveNewPin() {
+  const currentPin = document.getElementById('profile-current-pin').value.trim();
+  const newPin     = document.getElementById('profile-new-pin').value.trim();
+  const confirmPin = document.getElementById('profile-confirm-pin').value.trim();
+  const msg        = document.getElementById('profile-pin-msg');
+
+  if (!currentPin || !newPin || !confirmPin) { showProfileMsg(msg, '⚠ Please fill in all fields.', false); return; }
+  if (newPin.length !== 4 || !/^\d+$/.test(newPin)) { showProfileMsg(msg, '⚠ PIN must be exactly 4 digits.', false); return; }
+  if (newPin !== confirmPin) { showProfileMsg(msg, '⚠ New PINs do not match.', false); return; }
+
+  const hashedCurrent = await hashString(currentPin);
+  if (hashedCurrent !== getEffectivePinHash()) {
+    showProfileMsg(msg, '⚠ Current PIN is incorrect.', false); return;
+  }
+
+  const hashedNew = await hashString(newPin);
+  const overrides = getProfileOverrides();
+  const user = getCurrentUserEntry();
+  overrides[user.label + '_pin'] = hashedNew;
+  saveProfileOverrides(overrides);
+  showProfileMsg(msg, '✓ PIN updated! Takes effect on next login.', true);
+  document.getElementById('profile-current-pin').value = '';
+  document.getElementById('profile-new-pin').value = '';
+  document.getElementById('profile-confirm-pin').value = '';
+}
+
+function showProfileMsg(el, text, success) {
+  el.textContent = text;
+  el.style.color = success ? '#1D9E75' : '#d4000a';
+  el.style.display = 'block';
+}
+
+
 let currentShiftPhase = 'pre';
 let currentShiftType = null; // 'open' | 'day' | 'close'
 const SHIFT_ICONS = { open: '🌅', day: '☀️', close: '🌙' };
@@ -1230,6 +1763,33 @@ function getShiftNotes() {
   return (s.shiftNotes && s.shiftNotes[shiftKey()]) || {};
 }
 
+function tickAllInArea(area) {
+  const s = getState();
+  if (!s.shiftChecked) s.shiftChecked = {};
+  if (!s.shiftChecked[shiftKey()]) s.shiftChecked[shiftKey()] = [];
+  const arr      = s.shiftChecked[shiftKey()];
+  const items    = SHIFT_TASKS.filter(t => t.area === area);
+  const allTicked = items.every(t => arr.includes(t.name));
+  if (allTicked) {
+    // Untick all in area
+    items.forEach(t => {
+      const idx = arr.indexOf(t.name);
+      if (idx > -1) arr.splice(idx, 1);
+    });
+  } else {
+    // Tick all unticked, clear any priorities
+    items.forEach(t => {
+      if (!arr.includes(t.name)) arr.push(t.name);
+      if (s.shiftPriorities && s.shiftPriorities[shiftKey()]) {
+        delete s.shiftPriorities[shiftKey()][t.name];
+      }
+    });
+  }
+  saveState(s);
+  renderShift();
+  renderTodo();
+}
+
 function toggleShiftTask(name) {
   const s = getState();
   if (!s.shiftChecked) s.shiftChecked = {};
@@ -1247,37 +1807,6 @@ function toggleShiftTask(name) {
   saveState(s);
   renderShift();
   renderTodo();
-}
-
-function setShiftTaskPriority(name, priority) {
-  const s = getState();
-  if (s.shiftChecked && s.shiftChecked[shiftKey()]) {
-    const arr = s.shiftChecked[shiftKey()];
-    const idx = arr.indexOf(name);
-    if (idx > -1) arr.splice(idx, 1);
-  }
-  if (!s.shiftPriorities) s.shiftPriorities = {};
-  if (!s.shiftPriorities[shiftKey()]) s.shiftPriorities[shiftKey()] = {};
-  if (s.shiftPriorities[shiftKey()][name] === priority) {
-    delete s.shiftPriorities[shiftKey()][name];
-  } else {
-    s.shiftPriorities[shiftKey()][name] = priority;
-  }
-  saveState(s);
-  renderShift();
-  renderTodo();
-}
-
-function saveShiftTaskNote(name, note) {
-  const s = getState();
-  if (!s.shiftNotes) s.shiftNotes = {};
-  if (!s.shiftNotes[shiftKey()]) s.shiftNotes[shiftKey()] = {};
-  if (note.trim()) {
-    s.shiftNotes[shiftKey()][name] = note.trim();
-  } else {
-    delete s.shiftNotes[shiftKey()][name];
-  }
-  saveState(s);
 }
 
 function setShiftTaskPriority(name, priority) {
@@ -1329,9 +1858,20 @@ function renderShift() {
   const priText   = {a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'};
 
   areas.forEach(area => {
-    const items = SHIFT_TASKS.filter(t=>t.area===area);
-    const done  = items.filter(t=>checked.has(t.name) || priorities[t.name]).length;
-    html += `<div class="section-header"><span>${area}</span><span>${done}/${items.length}</span></div>`;
+    const items    = SHIFT_TASKS.filter(t=>t.area===area);
+    const done     = items.filter(t=>checked.has(t.name) || priorities[t.name]).length;
+    const allTicked = items.every(t=>checked.has(t.name));
+    const safeArea  = area.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html += `<div class="section-header" style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div onclick="event.stopPropagation();tickAllInArea('${safeArea}')"
+          style="width:20px;height:20px;border-radius:5px;border:2px solid ${allTicked?'#1D9E75':'#ccc'};
+          background:${allTicked?'#1D9E75':'#fff'};display:flex;align-items:center;justify-content:center;
+          cursor:pointer;flex-shrink:0;font-size:12px;color:#fff">${allTicked?'✓':''}</div>
+        <span>${area}</span>
+      </div>
+      <span>${done}/${items.length}</span>
+    </div>`;
     items.forEach(t => {
       const isDone   = checked.has(t.name);
       const taskPri  = priorities[t.name] || null;
@@ -1400,15 +1940,14 @@ function signOffShift() {
     return;
   }
 
-  if (!s.todoList) s.todoList = [];
-
   // Add tasks with a priority (not ticked) to to-do list
   // Allow duplicates if they come from a different shift type
   SHIFT_TASKS.forEach(t => {
     if (!checked.has(t.name) && priorities[t.name]) {
-      const exists = s.todoList.find(td => td.name === t.name && td.shiftType === currentShiftType && !td.done);
+      const exists = _todoList.find(td => td.name === t.name && td.shiftType === currentShiftType && !td.done);
       if (!exists) {
-        s.todoList.push({
+        const item = {
+          id: Date.now() + '_' + Math.random().toString(36).slice(2,7),
           name: t.name, area: t.area,
           priority: priorities[t.name],
           note: notes[t.name] || '',
@@ -1416,7 +1955,8 @@ function signOffShift() {
           shiftType: currentShiftType,
           addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
           addedDate: todayKey(), done: false, doneBy: null, doneAt: null
-        });
+        };
+        saveTodoItem(item);
       }
     }
   });
@@ -1601,9 +2141,8 @@ function confirmAddTodo() {
   if (!name) { showToast('Please describe the task'); return; }
 
   const note = document.getElementById('add-todo-note').value.trim();
-  const s = getState();
-  if (!s.todoList) s.todoList = [];
-  s.todoList.push({
+  const item = {
+    id: Date.now() + '_' + Math.random().toString(36).slice(2,7),
     name,
     area: area,
     priority: addTodoPriority,
@@ -1613,22 +2152,38 @@ function confirmAddTodo() {
     addedAt: new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
     addedDate: todayKey(),
     done: false, doneBy: null, doneAt: null
-  });
-  saveState(s);
+  };
+  saveTodoItem(item);
   toggleAddTodoPanel();
-  renderTodo();
   updateTodoBadge();
 }
 
+// ─── TO-DO LIST (Firebase-backed) ────────────────────────────────────
+let _todoList = [];
+let _todoListener = null;
+
+function initTodoListener() {
+  if (_todoListener) _todoListener();
+  _todoListener = fbListen(todayKey() + '/todoList', data => {
+    _todoList = data ? Object.values(data) : [];
+    renderTodo();
+    updateTodoBadge();
+  });
+}
+
 function getTodo() {
-  const s = getState();
-  return s.todoList || [];
+  return _todoList;
+}
+
+function saveTodoItem(item) {
+  const key = item.id || (Date.now() + '_' + Math.random().toString(36).slice(2,7));
+  item.id = key;
+  fbSet(todayKey() + '/todoList/' + key, item);
 }
 
 function toggleTodo(idx) {
-  const s = getState();
-  if (!s.todoList) return;
-  const item = s.todoList[idx];
+  const item = _todoList[idx];
+  if (!item) return;
   if (item.done) {
     item.done = false; item.doneBy = null; item.doneAt = null;
   } else {
@@ -1636,9 +2191,7 @@ function toggleTodo(idx) {
     item.doneBy = currentManager;
     item.doneAt = new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   }
-  saveState(s);
-  renderTodo();
-  updateTodoBadge();
+  saveTodoItem(item);
 }
 
 function renderTodo() {
@@ -1785,32 +2338,33 @@ function setCleaningFilter(area, btn) {
   renderCleaning();
 }
 
+// ─── CLEANING (Firebase-backed) ───────────────────────────────────────
+let _cleaningChecked = new Set();
+let _cleaningListener = null;
+
+function initCleaningListener() {
+  if (_cleaningListener) _cleaningListener();
+  _cleaningListener = fbListen(todayKey() + '/cleaningChecked', data => {
+    _cleaningChecked = data ? new Set(Object.keys(data)) : new Set();
+    renderCleaning();
+  });
+}
+
 function getCleaningChecked() {
-  const s = getState();
-  return s.cleaningChecked && s.cleaningChecked[todayKey()] ? new Set(s.cleaningChecked[todayKey()]) : new Set();
+  return _cleaningChecked;
 }
 
 function toggleCleaningTask(key, area, name, freq) {
-  const s = getState();
-  if (!s.cleaningChecked) s.cleaningChecked = {};
-  if (!s.cleaningChecked[todayKey()]) s.cleaningChecked[todayKey()] = [];
-  const arr = s.cleaningChecked[todayKey()];
-  const idx = arr.indexOf(key);
-
-  if (idx > -1) {
-    // Unticking — cancel any pending push and uncheck
+  if (_cleaningChecked.has(key)) {
+    // Unticking — remove from Firebase
     if (cleaningUndoTimers[key]) {
       clearTimeout(cleaningUndoTimers[key]);
       delete cleaningUndoTimers[key];
     }
-    arr.splice(idx, 1);
-    saveState(s);
-    renderCleaning();
+    db.ref(fbPath(todayKey() + '/cleaningChecked/' + key)).remove();
   } else {
-    // Ticking — add to checked, start 10s undo countdown
-    arr.push(key);
-    saveState(s);
-    renderCleaning();
+    // Ticking — add to Firebase, start undo countdown
+    fbSet(todayKey() + '/cleaningChecked/' + key, { ts: Date.now(), manager: currentManager });
     startCleaningUndo(key, area, name, freq);
   }
 }
@@ -1836,15 +2390,7 @@ function undoCleaningTask(key) {
     delete cleaningUndoTimers[key];
   }
   hideUndoToast(key);
-  // Uncheck the task
-  const s = getState();
-  if (s.cleaningChecked && s.cleaningChecked[todayKey()]) {
-    const arr = s.cleaningChecked[todayKey()];
-    const idx = arr.indexOf(key);
-    if (idx > -1) arr.splice(idx, 1);
-    saveState(s);
-    renderCleaning();
-  }
+  db.ref(fbPath(todayKey() + '/cleaningChecked/' + key)).remove();
 }
 
 function showUndoToast(key, area, name, freq) {
@@ -1902,31 +2448,21 @@ const freqColors = {daily:'background:#EAF3DE;color:#3B6D11',weekly:'background:
 function renderCleaning() {
   const today = getCleaningDate();
   const checked = getCleaningChecked();
-  const s = getState();
-
-  // Build set of tasks completed on previous days (to detect overdue)
-  const prevChecked = new Set();
-  if (s.cleaningChecked) {
-    Object.entries(s.cleaningChecked).forEach(([dateKey, keys]) => {
-      if (dateKey !== todayKey()) keys.forEach(k => prevChecked.add(k));
-    });
-  }
 
   // Filter tasks due today
   const dueTodayTasks = CLEANING_TASKS.filter(t => isTaskDueOn(t, today));
 
-  // Find overdue tasks: due on a day in the past 7 days, not completed that day, and not completed today
+  // Find overdue tasks: due on a day in the past 7 days and not completed today
+  // Note: historic completion data not available since moving to Firebase — 
+  // a task is overdue if it was due in the past 7 days and hasn't been ticked today
   const overdueTasks = [];
   for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
     const pastDate = new Date(today);
     pastDate.setDate(today.getDate() - daysAgo);
-    const pastKey = pastDate.toISOString().slice(0,10);
-    const pastChecked = new Set((s.cleaningChecked && s.cleaningChecked[pastKey]) || []);
     CLEANING_TASKS.forEach(t => {
       if (isTaskDueOn(t, pastDate)) {
         const key = t.area+'|'+t.name;
-        // Not completed that day, not already in overdue list, and not ticked off today
-        if (!pastChecked.has(key) && !overdueTasks.find(o=>o.key===key) && !checked.has(key)) {
+        if (!overdueTasks.find(o=>o.key===key) && !checked.has(key)) {
           overdueTasks.push({...t, key, daysAgo});
         }
       }
@@ -2001,22 +2537,18 @@ function renderCleaning() {
   const allOverdueKeys = new Set(overdueTasks.map(t=>t.key));
   // Also include ones already ticked (filtered out of overdueTasks but still completed overdue)
   let caughtUpCount = 0;
-  if (s.cleaningChecked && s.cleaningChecked[todayKey()]) {
-    s.cleaningChecked[todayKey()].forEach(key => {
-      // Was this task due on a previous day but not that day?
-      for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
-        const pastDate = new Date(today);
-        pastDate.setDate(today.getDate() - daysAgo);
-        const pastKey = pastDate.toISOString().slice(0,10);
-        const pastChecked = new Set((s.cleaningChecked && s.cleaningChecked[pastKey]) || []);
-        const task = CLEANING_TASKS.find(t => (t.area+'|'+t.name) === key);
-        if (task && isTaskDueOn(task, pastDate) && !pastChecked.has(key)) {
-          caughtUpCount++;
-          break;
-        }
+  // Use the local Firebase cache for today's checked tasks
+  _cleaningChecked.forEach(key => {
+    for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
+      const pastDate = new Date(today);
+      pastDate.setDate(today.getDate() - daysAgo);
+      const task = CLEANING_TASKS.find(t => (t.area+'|'+t.name) === key);
+      if (task && isTaskDueOn(task, pastDate)) {
+        caughtUpCount++;
+        break;
       }
-    });
-  }
+    }
+  });
 
   let progressText = `${doneToday} of ${totalToday} cleaning tasks completed today (${pct}%).`;
   if (caughtUpCount > 0) {
@@ -2048,9 +2580,20 @@ function getToiletSlots() {
   return slots;
 }
 
+// ─── TOILET LOG (Firebase-backed) ────────────────────────────────────
+let _toiletLogs = []; // local cache, updated by Firebase listener
+let _toiletListener = null;
+
+function initToiletListener() {
+  if (_toiletListener) _toiletListener();
+  _toiletListener = fbListen(todayKey() + '/toiletLog', data => {
+    _toiletLogs = data ? Object.values(data) : [];
+    renderToilet();
+  });
+}
+
 function getToiletLogs() {
-  const s = getState();
-  return (s.toiletLog && s.toiletLog[todayKey()]) || [];
+  return _toiletLogs;
 }
 
 function logToiletCheck() {
@@ -2058,7 +2601,6 @@ function logToiletCheck() {
   const nowMins = now.getHours()*60 + now.getMinutes();
   const slots = getToiletSlots();
 
-  // Find the slot closest to now in either direction
   let bestSlot = null;
   let bestDiff = Infinity;
   slots.forEach(slot => {
@@ -2070,13 +2612,9 @@ function logToiletCheck() {
   if (!bestSlot && slots.length > 0) bestSlot = slots[0].label;
 
   const ts = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const s = getState();
-  if (!s.toiletLog) s.toiletLog = {};
-  if (!s.toiletLog[todayKey()]) s.toiletLog[todayKey()] = [];
-  s.toiletLog[todayKey()].push({ manager: currentManager, time: ts, slot: bestSlot });
-  saveState(s);
+  const key = bestSlot.replace(':', '_');
+  fbSet(todayKey() + '/toiletLog/' + key, { manager: currentManager, time: ts, slot: bestSlot });
   pushCheckToSheets(bestSlot, ts);
-  renderToilet();
 }
 
 function renderToilet() {
@@ -2152,14 +2690,8 @@ function renderToilet() {
 
 function removeToiletCheck(slotLabel) {
   if (!confirm('Remove the check for ' + slotLabel + '?')) return;
-  const s = getState();
-  if (!s.toiletLog || !s.toiletLog[todayKey()]) return;
-  // Remove the most recent log entry for this slot
-  const logs = s.toiletLog[todayKey()];
-  const idx = logs.map(l => l.slot).lastIndexOf(slotLabel);
-  if (idx > -1) logs.splice(idx, 1);
-  saveState(s);
-  renderToilet();
+  const key = slotLabel.replace(':', '_');
+  db.ref(fbPath(todayKey() + '/toiletLog/' + key)).remove();
 }
 
 function toggleOverdueHistory(headerEl) {
@@ -2436,8 +2968,15 @@ function parseBreakSchedule(allRows) {
     || breakDays[0];
 
   document.getElementById('breaks-loading').style.display = 'none';
-  document.getElementById('breaks-upload-area').style.display = 'block';
-  document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+  if (canUploadBreaksPDF()) {
+    document.getElementById('breaks-upload-area').style.display = 'block';
+    document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+    document.getElementById('breaks-no-upload-msg').style.display = 'none';
+  } else {
+    document.getElementById('breaks-upload-area').style.display = 'none';
+    document.getElementById('breaks-no-upload-msg').style.display = 'block';
+    document.getElementById('breaks-no-upload-msg').innerHTML = '<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#1D9E75;margin-bottom:4px">Schedule loaded</div><div style="font-size:13px;color:#888">The weekly break sheet is ready.</div>';
+  }
 
   // Persist to localStorage
   const s = getState();
@@ -2449,6 +2988,7 @@ function parseBreakSchedule(allRows) {
   renderBreakDaySelector();
   renderBreakSheet();
   document.getElementById('breaks-day-selector').style.display = 'block';
+  initBreakListener();
 }
 
 function resetBreaksUpload() {
@@ -2580,55 +3120,33 @@ function renderBreakSheet() {
   document.getElementById('breaks-list').innerHTML = html;
 }
 
+// ─── BREAK CHECKS (Firebase-backed) ─────────────────────────────────
+let _breakListener = null;
+
+function initBreakListener() {
+  if (_breakListener) _breakListener();
+  const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
+  _breakListener = fbListen('breakChecked/' + weekKey, data => {
+    breakChecked = data || {};
+    renderBreakSheet();
+  });
+}
+
+function saveBreakChecked() {
+  const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
+  fbSet('breakChecked/' + weekKey, breakChecked);
+  // Also keep localStorage in sync for offline fallback
+  const s = getState();
+  s.breakChecked = breakChecked;
+  saveState(s);
+}
+
 function toggleBreak(name, day, type) {
   const key = name + '_' + day;
   if (!breakChecked[key]) breakChecked[key] = {};
   breakChecked[key][type] = !breakChecked[key][type];
   saveBreakChecked();
   renderBreakSheet();
-}
-
-function toggleAddStaffPanel() {
-  const panel = document.getElementById('breaks-add-panel');
-  const isVisible = panel.style.display !== 'none';
-  panel.style.display = isVisible ? 'none' : 'block';
-  if (!isVisible) {
-    document.getElementById('add-staff-name').value = '';
-    document.getElementById('add-staff-start').value = '';
-    document.getElementById('add-staff-end').value = '';
-    document.getElementById('add-staff-name').focus();
-  }
-}
-
-function confirmAddExtraStaff() {
-  const name  = document.getElementById('add-staff-name').value.trim();
-  const start = document.getElementById('add-staff-start').value;
-  const end   = document.getElementById('add-staff-end').value;
-
-  if (!name || !start || !end) {
-    alert('Please fill in name, start time and end time.');
-    return;
-  }
-  if (!selectedBreakDay || !breakSchedule[selectedBreakDay]) return;
-
-  const startMins = timeToMins(start);
-  breakSchedule[selectedBreakDay].push({ name, start, end, startMins });
-  // Re-sort by start time
-  breakSchedule[selectedBreakDay].sort((a, b) => a.startMins - b.startMins);
-
-  // Save to localStorage
-  const s = getState();
-  s.breakSchedule = breakSchedule;
-  saveState(s);
-
-  document.getElementById('breaks-add-panel').style.display = 'none';
-  renderBreakSheet();
-}
-
-function saveBreakChecked() {
-  const s = getState();
-  s.breakChecked = breakChecked;
-  saveState(s);
 }
 
 function toggleStruckOff(name, day) {
@@ -2670,6 +3188,43 @@ function saveBreakNote(name, day, value) {
   renderBreakSheet();
 }
 
+function toggleAddStaffPanel() {
+  const panel = document.getElementById('breaks-add-panel');
+  const isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    document.getElementById('add-staff-name').value = '';
+    document.getElementById('add-staff-start').value = '';
+    document.getElementById('add-staff-end').value = '';
+    document.getElementById('add-staff-name').focus();
+  }
+}
+
+function confirmAddExtraStaff() {
+  const name  = document.getElementById('add-staff-name').value.trim();
+  const start = document.getElementById('add-staff-start').value;
+  const end   = document.getElementById('add-staff-end').value;
+
+  if (!name || !start || !end) {
+    alert('Please fill in name, start time and end time.');
+    return;
+  }
+  if (!selectedBreakDay || !breakSchedule[selectedBreakDay]) return;
+
+  const startMins = timeToMins(start);
+  breakSchedule[selectedBreakDay].push({ name, start, end, startMins });
+  // Re-sort by start time
+  breakSchedule[selectedBreakDay].sort((a, b) => a.startMins - b.startMins);
+
+  // Save to localStorage
+  const s = getState();
+  s.breakSchedule = breakSchedule;
+  saveState(s);
+
+  document.getElementById('breaks-add-panel').style.display = 'none';
+  renderBreakSheet();
+}
+
 // ─── BREAK SHEET ALERTS & NIGHTLY PUSH ──────────────────────────────
 let breakMidnightAlerted = false;
 let nightlyPushed = false;
@@ -2708,22 +3263,25 @@ function removePastBreakDays() {
   if (breakDays.length === 0) return;
   const now = new Date();
 
-  // A day is only removed once it's fully over — i.e. after 2am the NEXT day.
-  // So if it's Saturday at 01:30, Friday is still live.
-  // If it's Saturday at 02:30, Friday can be removed.
-  // Build a "removeBeforeDate": any day whose date number is strictly less than this.
-  const removeBeforeDate = new Date(now);
-  if (now.getHours() < 2) {
-    // Before 2am — today hasn't fully closed yet, so remove anything before yesterday
-    removeBeforeDate.setDate(removeBeforeDate.getDate() - 1);
+  // A day is removed only after 2am the NEXT day.
+  // Work out the earliest date number that should still be visible.
+  // Before 2am: today and yesterday are both still live (late close shifts)
+  // After 2am: today is live, yesterday can go
+  let keepFromDate = new Date(now);
+  if (now.getHours() >= 2) {
+    // After 2am — only keep today and future days
+    keepFromDate.setHours(0, 0, 0, 0);
+  } else {
+    // Before 2am — keep yesterday onwards
+    keepFromDate.setDate(keepFromDate.getDate() - 1);
+    keepFromDate.setHours(0, 0, 0, 0);
   }
-  // removeBeforeDate is the earliest date that should still be shown
-  // i.e. remove days strictly before removeBeforeDate
 
   const filtered = breakDays.filter(day => {
     const dayNum = parseInt(day.split(' ')[1]);
-    const candidate = new Date(removeBeforeDate.getFullYear(), removeBeforeDate.getMonth(), dayNum);
-    return candidate >= removeBeforeDate;
+    // Build a date for this day using same month/year as keepFromDate
+    const candidate = new Date(keepFromDate.getFullYear(), keepFromDate.getMonth(), dayNum);
+    return candidate >= keepFromDate;
   });
 
   if (filtered.length !== breakDays.length) {
@@ -2871,8 +3429,7 @@ function pushShiftDataToSheets() {
 }
 
 function pushTodoToSheets() {
-  const s = getState();
-  const todo = (s.todoList || []).filter(t => t.addedDate === todayKey());
+  const todo = _todoList.filter(t => t.addedDate === todayKey());
   if (todo.length === 0) return;
 
   const rows = todo.map(t => [
@@ -2899,30 +3456,8 @@ function pushTodoToSheets() {
 }
 
 function cleanupOldData() {
-  const s = getState();
-  const today = todayKey();
-  if (s.todoList) {
-    s.todoList = s.todoList.filter(t => t.addedDate === today);
-  }
-  // Remove any toilet log entries for future slots (more than 35 mins ahead)
-  if (s.toiletLog && s.toiletLog[today]) {
-    const now = new Date();
-    const nowMins = now.getHours()*60 + now.getMinutes();
-    const slots = new Set();
-    // Build valid slot times up to now+35 mins
-    let h = 7, m = 0;
-    while (h < 25) {
-      const slotMins = h*60 + m;
-      if (slotMins <= nowMins + 35) {
-        slots.add(String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0'));
-      }
-      m += 30;
-      if (m >= 60) { h++; m -= 60; }
-      if (h > 24) break;
-    }
-    s.toiletLog[today] = s.toiletLog[today].filter(l => slots.has(l.slot));
-  }
-  saveState(s);
+  // Toilet log is now in Firebase — nothing to clean locally
+  // Break schedule PDF stays in localStorage (not synced, intentional)
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────
