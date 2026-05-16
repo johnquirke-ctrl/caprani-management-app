@@ -1286,6 +1286,8 @@ function initApp() {
   initCleaningListener();
   initTodoListener();
   if (breakDays.length > 0) initBreakListener();
+  // Listen for break schedule uploaded by another device
+  initBreakScheduleListener();
   showPage('shift');
 }
 
@@ -1642,9 +1644,14 @@ function selectShiftType(type) {
   // Only show Change button if there are other available shifts remaining
   const available = ['open','day','close'].filter(t => !completed.has(t) && t !== type);
   document.getElementById('change-shift-btn').style.display = available.length > 0 ? 'inline' : 'none';
+  // Start Firebase listeners for this shift
+  _shiftState = { checked: new Set(), priorities: {}, notes: {}, signedOff: false };
+  _postShiftChecked = new Set();
+  initShiftListener();
+  initPostShiftListener();
+  initSmartTargetsListener();
   setShiftPhase('pre');
   renderShift();
-  renderSmartTargets();
 }
 
 function restoreShiftType() {
@@ -1680,11 +1687,22 @@ function buildShiftFilters() {
   renderPostShift();
 }
 
+// ─── SMART TARGETS (Firebase-backed) ────────────────────────────────
+let _smartTargets = {};
+let _smartListener = null;
+
+function initSmartTargetsListener() {
+  if (_smartListener) _smartListener();
+  _smartListener = fbListen(todayKey() + '/smartTargets', data => {
+    _smartTargets = data || {};
+    renderSmartTargets();
+  });
+}
+
 function renderSmartTargets() {
   let html = '';
   for (let i = 1; i <= 4; i++) {
-    const s = getState();
-    const val = s.smartTargets && s.smartTargets[todayKey()] ? (s.smartTargets[todayKey()][i] || '') : '';
+    const val = _smartTargets[i] || '';
     html += `<div class="smart-row">
       <div class="smart-num">${i}</div>
       <input class="smart-input" type="text" value="${val.replace(/"/g,'&quot;')}" placeholder="Enter target ${i}..." onchange="saveSmartTarget(${i}, this.value)">
@@ -1694,11 +1712,8 @@ function renderSmartTargets() {
 }
 
 function saveSmartTarget(num, val) {
-  const s = getState();
-  if (!s.smartTargets) s.smartTargets = {};
-  if (!s.smartTargets[todayKey()]) s.smartTargets[todayKey()] = {};
-  s.smartTargets[todayKey()][num] = val;
-  saveState(s);
+  _smartTargets[num] = val;
+  fbSet(todayKey() + '/smartTargets', _smartTargets);
 }
 
 function renderTravelPath() {
@@ -1748,96 +1763,100 @@ function shiftKey() {
   return todayKey() + '_' + (currentShiftType || 'unknown');
 }
 
-function getShiftChecked() {
-  const s = getState();
-  return s.shiftChecked && s.shiftChecked[shiftKey()] ? new Set(s.shiftChecked[shiftKey()]) : new Set();
+// ─── SHIFT CHECKLIST (Firebase-backed) ──────────────────────────────
+let _shiftState = {}; // local cache: { checked: Set, priorities: {}, notes: {} }
+let _shiftListener = null;
+
+function initShiftListener() {
+  if (_shiftListener) _shiftListener();
+  if (!currentShiftType) return;
+  _shiftListener = fbListen(todayKey() + '/shift/' + currentShiftType, data => {
+    _shiftState = {
+      checked:    data && data.checked    ? new Set(data.checked)  : new Set(),
+      priorities: data && data.priorities ? data.priorities        : {},
+      notes:      data && data.notes      ? data.notes             : {},
+      signedOff:  data && data.signedOff  ? data.signedOff         : false
+    };
+    renderShift();
+  });
 }
 
-function getShiftPriorities() {
+function saveShiftState() {
+  if (!currentShiftType) return;
+  fbSet(todayKey() + '/shift/' + currentShiftType, {
+    checked:    [..._shiftState.checked],
+    priorities: _shiftState.priorities,
+    notes:      _shiftState.notes,
+    signedOff:  _shiftState.signedOff || false
+  });
+  // Keep localStorage in sync for offline fallback
   const s = getState();
-  return (s.shiftPriorities && s.shiftPriorities[shiftKey()]) || {};
+  if (!s.shiftChecked)    s.shiftChecked    = {};
+  if (!s.shiftPriorities) s.shiftPriorities = {};
+  if (!s.shiftNotes)      s.shiftNotes      = {};
+  s.shiftChecked[shiftKey()]    = [..._shiftState.checked];
+  s.shiftPriorities[shiftKey()] = _shiftState.priorities;
+  s.shiftNotes[shiftKey()]      = _shiftState.notes;
+  saveState(s);
 }
 
-function getShiftNotes() {
-  const s = getState();
-  return (s.shiftNotes && s.shiftNotes[shiftKey()]) || {};
-}
+function getShiftChecked()    { return _shiftState.checked    || new Set(); }
+function getShiftPriorities() { return _shiftState.priorities || {}; }
+function getShiftNotes()      { return _shiftState.notes      || {}; }
 
 function tickAllInArea(area) {
-  const s = getState();
-  if (!s.shiftChecked) s.shiftChecked = {};
-  if (!s.shiftChecked[shiftKey()]) s.shiftChecked[shiftKey()] = [];
-  const arr      = s.shiftChecked[shiftKey()];
-  const items    = SHIFT_TASKS.filter(t => t.area === area);
-  const allTicked = items.every(t => arr.includes(t.name));
+  if (!_shiftState.checked) _shiftState.checked = new Set();
+  const items = SHIFT_TASKS.filter(t => t.area === area);
+  const allTicked = items.every(t => _shiftState.checked.has(t.name));
   if (allTicked) {
-    // Untick all in area
     items.forEach(t => {
-      const idx = arr.indexOf(t.name);
-      if (idx > -1) arr.splice(idx, 1);
+      _shiftState.checked.delete(t.name);
     });
   } else {
-    // Tick all unticked, clear any priorities
     items.forEach(t => {
-      if (!arr.includes(t.name)) arr.push(t.name);
-      if (s.shiftPriorities && s.shiftPriorities[shiftKey()]) {
-        delete s.shiftPriorities[shiftKey()][t.name];
-      }
+      _shiftState.checked.add(t.name);
+      if (_shiftState.priorities) delete _shiftState.priorities[t.name];
     });
   }
-  saveState(s);
+  saveShiftState();
   renderShift();
   renderTodo();
 }
 
 function toggleShiftTask(name) {
-  const s = getState();
-  if (!s.shiftChecked) s.shiftChecked = {};
-  if (!s.shiftChecked[shiftKey()]) s.shiftChecked[shiftKey()] = [];
-  const arr = s.shiftChecked[shiftKey()];
-  const idx = arr.indexOf(name);
-  if (idx > -1) {
-    arr.splice(idx, 1);
+  if (!_shiftState.checked) _shiftState.checked = new Set();
+  if (_shiftState.checked.has(name)) {
+    _shiftState.checked.delete(name);
   } else {
-    arr.push(name);
-    if (s.shiftPriorities && s.shiftPriorities[shiftKey()]) {
-      delete s.shiftPriorities[shiftKey()][name];
-    }
+    _shiftState.checked.add(name);
+    if (_shiftState.priorities) delete _shiftState.priorities[name];
   }
-  saveState(s);
+  saveShiftState();
   renderShift();
   renderTodo();
 }
 
 function setShiftTaskPriority(name, priority) {
-  const s = getState();
-  if (s.shiftChecked && s.shiftChecked[shiftKey()]) {
-    const arr = s.shiftChecked[shiftKey()];
-    const idx = arr.indexOf(name);
-    if (idx > -1) arr.splice(idx, 1);
-  }
-  if (!s.shiftPriorities) s.shiftPriorities = {};
-  if (!s.shiftPriorities[shiftKey()]) s.shiftPriorities[shiftKey()] = {};
-  if (s.shiftPriorities[shiftKey()][name] === priority) {
-    delete s.shiftPriorities[shiftKey()][name];
+  if (!_shiftState.priorities) _shiftState.priorities = {};
+  if (_shiftState.checked) _shiftState.checked.delete(name);
+  if (_shiftState.priorities[name] === priority) {
+    delete _shiftState.priorities[name];
   } else {
-    s.shiftPriorities[shiftKey()][name] = priority;
+    _shiftState.priorities[name] = priority;
   }
-  saveState(s);
+  saveShiftState();
   renderShift();
   renderTodo();
 }
 
 function saveShiftTaskNote(name, note) {
-  const s = getState();
-  if (!s.shiftNotes) s.shiftNotes = {};
-  if (!s.shiftNotes[shiftKey()]) s.shiftNotes[shiftKey()] = {};
+  if (!_shiftState.notes) _shiftState.notes = {};
   if (note.trim()) {
-    s.shiftNotes[shiftKey()][name] = note.trim();
+    _shiftState.notes[name] = note.trim();
   } else {
-    delete s.shiftNotes[shiftKey()][name];
+    delete _shiftState.notes[name];
   }
-  saveState(s);
+  saveShiftState();
 }
 
 function toggleShiftTaskNote(name) {
@@ -1929,7 +1948,6 @@ function signOffShift() {
   const checked    = getShiftChecked();
   const priorities = getShiftPriorities();
   const notes      = getShiftNotes();
-  const s          = getState();
 
   // Validation — every task must be either ticked or have a priority
   const unactioned = SHIFT_TASKS.filter(t => !checked.has(t.name) && !priorities[t.name]);
@@ -1962,6 +1980,15 @@ function signOffShift() {
   });
 
   const flagged = SHIFT_TASKS.filter(t=>!checked.has(t.name) && priorities[t.name]).length;
+
+  // Mark pre-shift as signed off in Firebase
+  _shiftState.signedOff = true;
+  _shiftState.signOffBy = currentManager;
+  _shiftState.signOffAt = new Date().toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  saveShiftState();
+
+  // Also keep signoffs in localStorage for backward compat
+  const s = getState();
   if (!s.shiftSignoffs) s.shiftSignoffs = [];
   s.shiftSignoffs.push({
     manager: currentManager,
@@ -1984,20 +2011,30 @@ function signOffShift() {
 }
 
 
-// POST-SHIFT
+// POST-SHIFT (Firebase-backed)
+let _postShiftChecked = new Set();
+let _postShiftListener = null;
+
+function initPostShiftListener() {
+  if (_postShiftListener) _postShiftListener();
+  if (!currentShiftType) return;
+  _postShiftListener = fbListen(todayKey() + '/postShift/' + currentShiftType + '/checked', data => {
+    _postShiftChecked = data ? new Set(data) : new Set();
+    renderPostShift();
+  });
+}
+
 function getPostShiftChecked() {
-  const s = getState();
-  return s.postShiftChecked && s.postShiftChecked[todayKey()] ? new Set(s.postShiftChecked[todayKey()]) : new Set();
+  return _postShiftChecked;
 }
 
 function togglePostShiftTask(name) {
-  const s = getState();
-  if (!s.postShiftChecked) s.postShiftChecked = {};
-  if (!s.postShiftChecked[todayKey()]) s.postShiftChecked[todayKey()] = [];
-  const arr = s.postShiftChecked[todayKey()];
-  const idx = arr.indexOf(name);
-  if (idx > -1) arr.splice(idx,1); else arr.push(name);
-  saveState(s);
+  if (_postShiftChecked.has(name)) {
+    _postShiftChecked.delete(name);
+  } else {
+    _postShiftChecked.add(name);
+  }
+  fbSet(todayKey() + '/postShift/' + currentShiftType + '/checked', [..._postShiftChecked]);
   renderPostShift();
 }
 
@@ -2025,20 +2062,27 @@ function signOffPostShift() {
   const checked = getPostShiftChecked();
   const total = POST_SHIFT_TASKS.length;
   const done = POST_SHIFT_TASKS.filter(t=>checked.has(t.name)).length;
-  // Mark this shift type as completed for today
+
+  // Mark shift type as completed in Firebase
   if (currentShiftType) {
+    fbGet(todayKey() + '/completedShiftTypes').then(existing => {
+      const arr = existing || [];
+      if (!arr.includes(currentShiftType)) arr.push(currentShiftType);
+      fbSet(todayKey() + '/completedShiftTypes', arr);
+    });
+    // Also keep in localStorage for shift selector
     const s = getState();
     if (!s.completedShiftTypes) s.completedShiftTypes = {};
     if (!s.completedShiftTypes[todayKey()]) s.completedShiftTypes[todayKey()] = [];
     if (!s.completedShiftTypes[todayKey()].includes(currentShiftType)) {
       s.completedShiftTypes[todayKey()].push(currentShiftType);
     }
-    // Clear this manager's active shift
     if (s.activeShift && s.activeShift[currentManager]) {
       delete s.activeShift[currentManager];
     }
     saveState(s);
   }
+
   const box = document.getElementById('post-signed-box');
   document.getElementById('post-signed-name').textContent = '✓ Post-shift signed off by ' + currentManager;
   document.getElementById('post-signed-time').textContent = document.getElementById('post-sign-time').value;
@@ -2978,11 +3022,15 @@ function parseBreakSchedule(allRows) {
     document.getElementById('breaks-no-upload-msg').innerHTML = '<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#1D9E75;margin-bottom:4px">Schedule loaded</div><div style="font-size:13px;color:#888">The weekly break sheet is ready.</div>';
   }
 
-  // Persist to localStorage
+  // Persist to localStorage AND Firebase so other devices get the schedule
   const s = getState();
   s.breakSchedule = breakSchedule;
   s.breakDays = breakDays;
   saveState(s);
+
+  // Push parsed schedule to Firebase for other devices
+  const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
+  fbSet('breakSchedule/' + weekKey, { breakSchedule, breakDays, updatedAt: Date.now() });
 
   document.getElementById('breaks-add-btn').style.display = 'block';
   renderBreakDaySelector();
@@ -3001,6 +3049,9 @@ function resetBreaksUpload() {
   delete s.breakDays;
   delete s.breakChecked;
   saveState(s);
+  // Clear from Firebase so other devices also reset
+  db.ref(fbPath('breakSchedule')).remove();
+  db.ref(fbPath('breakChecked')).remove();
   const area = document.getElementById('breaks-upload-area');
   area.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📄</div>' +
     '<div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Drop PDF here or tap to upload</div>' +
@@ -3120,7 +3171,63 @@ function renderBreakSheet() {
   document.getElementById('breaks-list').innerHTML = html;
 }
 
-// ─── BREAK CHECKS (Firebase-backed) ─────────────────────────────────
+// ─── BREAK SCHEDULE LISTENER (syncs parsed schedule across devices) ──
+let _breakScheduleListener = null;
+
+function initBreakScheduleListener() {
+  if (_breakScheduleListener) _breakScheduleListener();
+  // Listen for the most recent week's schedule
+  // We listen to the whole breakSchedule node and pick the latest
+  _breakScheduleListener = fbListen('breakSchedule', data => {
+    if (!data) return;
+    // Find most recent week key
+    const keys = Object.keys(data).sort((a,b) => {
+      const [da, ya] = a.split('_').map(Number);
+      const [db, yb] = b.split('_').map(Number);
+      return (yb - ya) || (db - da);
+    });
+    if (keys.length === 0) return;
+    const latest = data[keys[0]];
+    if (!latest || !latest.breakDays || latest.breakDays.length === 0) return;
+
+    // Only update if we don't already have a schedule loaded locally
+    if (breakDays.length > 0) return;
+
+    breakSchedule = latest.breakSchedule;
+    breakDays = latest.breakDays;
+
+    // Save to localStorage
+    const s = getState();
+    s.breakSchedule = breakSchedule;
+    s.breakDays = breakDays;
+    saveState(s);
+
+    removePastBreakDays();
+    const now = new Date();
+    const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+    const todayNum = now.getDate();
+    selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
+      || breakDays.find(d => d.startsWith(todayShort))
+      || breakDays[0];
+
+    // Show schedule loaded state
+    if (canUploadBreaksPDF()) {
+      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+      document.getElementById('breaks-upload-area').style.display = 'block';
+      document.getElementById('breaks-no-upload-msg').style.display = 'none';
+    } else {
+      document.getElementById('breaks-upload-area').style.display = 'none';
+      document.getElementById('breaks-no-upload-msg').style.display = 'block';
+      document.getElementById('breaks-no-upload-msg').innerHTML = '<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#1D9E75;margin-bottom:4px">Schedule loaded</div><div style="font-size:13px;color:#888">The weekly break sheet is ready.</div>';
+    }
+
+    document.getElementById('breaks-add-btn').style.display = 'block';
+    document.getElementById('breaks-day-selector').style.display = 'block';
+    renderBreakDaySelector();
+    renderBreakSheet();
+    initBreakListener();
+  });
+}
 let _breakListener = null;
 
 function initBreakListener() {
@@ -3395,17 +3502,20 @@ function pushBreakSheetToSheets(isTest = false) {
 }
 
 function pushShiftDataToSheets() {
-  const s = getState();
+  // Nightly push is now handled by Apps Script reading Firebase directly.
+  // This function remains for any manual/fallback push from the app.
   const shiftTypes = ['open', 'day', 'close'];
   const rows = [];
 
   shiftTypes.forEach(type => {
+    // Read from localStorage fallback (Firebase is the source of truth but
+    // Apps Script reads Firebase directly at 2am)
+    const s = getState();
     const key = todayKey() + '_' + type;
-    const checked  = new Set((s.shiftChecked  && s.shiftChecked[key])  || []);
+    const checked    = new Set((s.shiftChecked    && s.shiftChecked[key])    || []);
     const priorities = (s.shiftPriorities && s.shiftPriorities[key]) || {};
     const notes      = (s.shiftNotes      && s.shiftNotes[key])      || {};
 
-    // Only push if this shift type had any activity
     if (checked.size === 0 && Object.keys(priorities).length === 0) return;
 
     SHIFT_TASKS.forEach(t => {
