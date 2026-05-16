@@ -936,12 +936,13 @@ function fbGet(path) {
   return db.ref(fbPath(...path.split('/'))).get().then(snap => snap.exists() ? snap.val() : null).catch(() => null);
 }
 
-// Listen to a path in real-time
+// Listen to a path in real-time — returns cleanup function
 function fbListen(path, callback) {
   if (!currentRestaurantId) return () => {};
   const ref = db.ref(fbPath(...path.split('/')));
-  ref.on('value', snap => callback(snap.exists() ? snap.val() : null));
-  return () => ref.off('value');
+  const handler = snap => callback(snap.exists() ? snap.val() : null);
+  ref.on('value', handler);
+  return () => ref.off('value', handler); // Remove only THIS specific listener
 }
 
 // ─── DATA ───────────────────────────────────────────────────────────
@@ -3406,7 +3407,8 @@ function initBreakScheduleListener() {
     document.getElementById('breaks-day-selector').style.display = 'block';
     renderBreakDaySelector();
     renderBreakSheet();
-    initBreakListener();
+    // Only init break listener if not already active
+    if (!_breakListener) initBreakListener();
   });
 }
 let _breakListener = null;
