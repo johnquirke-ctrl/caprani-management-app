@@ -3380,12 +3380,16 @@ function initBreakScheduleListener() {
     saveState(s);
 
     removePastBreakDays();
-    const now = new Date();
-    const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
-    const todayNum = now.getDate();
-    selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
-      || breakDays.find(d => d.startsWith(todayShort))
-      || breakDays[0];
+
+    // Only reset selectedBreakDay if current selection is no longer valid
+    if (!selectedBreakDay || !breakDays.includes(selectedBreakDay)) {
+      const now = new Date();
+      const todayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+      const todayNum = now.getDate();
+      selectedBreakDay = breakDays.find(d => d.startsWith(todayShort + ' ' + todayNum))
+        || breakDays.find(d => d.startsWith(todayShort))
+        || breakDays[0];
+    }
 
     // Show correct UI state based on role
     if (canUploadBreaksPDF()) {
@@ -3505,11 +3509,14 @@ function confirmAddExtraStaff() {
   s.breakDays = breakDays;
   saveState(s);
 
-  // Push updated schedule to Firebase so all devices see the new staff member
+  // Render immediately on this device — don't wait for Firebase round-trip
+  document.getElementById('breaks-add-panel').style.display = 'none';
+  renderBreakDaySelector();
+  renderBreakSheet();
+
+  // Push to Firebase so all other devices update instantly
   const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
   fbSet('breakSchedule/' + weekKey, { breakSchedule, breakDays, updatedAt: Date.now() });
-
-  document.getElementById('breaks-add-panel').style.display = 'none';
 }
 
 // ─── BREAK SHEET ALERTS & NIGHTLY PUSH ──────────────────────────────
