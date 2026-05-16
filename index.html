@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Caprani Mgmt">
 <title>Caprani Management App</title>
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" crossorigin="anonymous"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;max-width:600px;margin:0 auto}
@@ -34,7 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .logout-btn{font-size:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
 
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:#fff;border-top:1px solid #e5e5e0;display:flex;z-index:20}
-.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:transparent;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;color:#999;font-size:10px;font-weight:500}
+.nav-btn{flex:1;padding:10px 2px 8px;border:none;background:transparent;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;color:#999;font-size:9px;font-weight:500}
 .nav-btn.active{color:#d4000a}
 .nav-icon{font-size:22px;line-height:1}
 
@@ -660,6 +660,220 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="bottom-pad"></div>
     </div>
 
+    <!-- PAGE: RESOURCES -->
+    <div class="page" id="page-resources">
+      <div class="page-header">
+        <h2>Resources</h2>
+        <p>Reference documents for your shift — read only.</p>
+      </div>
+      <div id="resources-list" style="padding:12px;display:flex;flex-direction:column;gap:10px">
+
+        <!-- Document 1: Floor Plan -->
+        <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
+          <div onclick="toggleResource('resource-floorplan')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">🗺️</span>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:#1a1a1a">Floor Plan</div>
+                <div style="font-size:12px;color:#888;margin-top:2px">DT Single Beverage Cells · 3IPs · COTF</div>
+              </div>
+            </div>
+            <span id="resource-floorplan-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
+          </div>
+          <div id="resource-floorplan" style="display:none;border-top:1px solid #f0f0ec">
+
+            <!-- IP Usage -->
+            <div style="padding:12px 16px;background:#f9f9f6">
+              <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">IP Usage — Sandwich Count</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+                ${[['IP 1','up to 155','#E6F1FB','#185FA5'],['IP 2','156–471','#EAF3DE','#3A7D1E'],['IP 3','472–691','#FAEEDA','#854F0B'],['IP 4','692–1087','#FCEBEB','#A32D2D']].map(([ip,range,bg,col])=>`
+                <div style="background:${bg};border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:11px;font-weight:700;color:${col}">${ip}</div>
+                  <div style="font-size:10px;color:${col};margin-top:2px">${range}</div>
+                </div>`).join('')}
+              </div>
+            </div>
+
+            <!-- Sections -->
+            ${[
+              {
+                section: 'Front Counter',
+                leader: true,
+                roles: [
+                  {num: 'Always on', name: 'Kiosk Coach/OT'},
+                  {num: '1', name: 'Dynamic Runner'},
+                  {num: '2', name: 'Dynamic Runner Fries'},
+                  {num: '3', name: 'Expeditor'},
+                ]
+              },
+              {
+                section: 'Drive Thru',
+                leader: true,
+                roles: [
+                  {num: 'Always on', name: 'Order Taker (Booth 1)'},
+                  {num: '1', name: 'Presenter'},
+                  {num: '2', name: 'Runner'},
+                  {num: '3', name: 'Cashier (32 Cars)'},
+                  {num: '4', name: 'Checker'},
+                ]
+              },
+              {
+                section: 'Beverages',
+                leader: true,
+                roles: [
+                  {num: '1', name: 'Beverages Screen 1'},
+                  {num: '2', name: 'Beverage Bundler'},
+                ]
+              },
+              {
+                section: 'Fries',
+                leader: false,
+                roles: [
+                  {num: '1', name: 'Assembler'},
+                ]
+              },
+              {
+                section: 'Temping & Prep',
+                leader: false,
+                roles: [
+                  {num: '1', name: 'T & P'},
+                ]
+              },
+              {
+                section: 'Made For You',
+                leader: true,
+                roles: [
+                  {num: '1', name: 'Initiator Line 2'},
+                  {num: '2', name: 'Batch Beef'},
+                  {num: '3', name: 'Batch Fried'},
+                  {num: '4', name: 'Assembler Line 2'},
+                  {num: '5', name: 'Initiator Line 1'},
+                  {num: '6', name: 'Assembler Line 1'},
+                  {num: '7', name: 'Finisher Line 1'},
+                  {num: '8', name: 'Finisher Line 2'},
+                ]
+              }
+            ].map(({section, leader, roles}) => `
+            <div style="border-top:1px solid #f0f0ec">
+              <div style="padding:8px 16px;background:#eeeee8;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em">${section}</span>
+                ${leader ? '<span style="font-size:10px;background:#d4000a;color:#fff;padding:2px 7px;border-radius:10px;font-weight:600">Leader</span>' : ''}
+              </div>
+              ${roles.map(r => `
+              <div style="padding:9px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f9f9f6">
+                <div style="width:28px;height:28px;border-radius:50%;background:${r.num==='Always on'?'#1D9E75':'#d4000a'};color:#fff;font-size:${r.num==='Always on'?'7':'12'}px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${r.num==='Always on'?'AO':r.num}</div>
+                <span style="font-size:13px;color:#333">${r.name}</span>
+              </div>`).join('')}
+            </div>`).join('')}
+
+          </div>
+        </div>
+
+        <!-- Document 2: Secondary Responsibilities -->
+        <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden">
+          <div onclick="toggleResource('resource-secondary')" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">📋</span>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:#1a1a1a">Secondary Responsibilities</div>
+                <div style="font-size:12px;color:#888;margin-top:2px">Station duties alongside primary role</div>
+              </div>
+            </div>
+            <span id="resource-secondary-chevron" style="font-size:18px;color:#aaa;transition:transform 0.2s">›</span>
+          </div>
+          <div id="resource-secondary" style="display:none;border-top:1px solid #f0f0ec">
+
+            ${[
+              {
+                title: 'Line',
+                colour: '#E6F1FB',
+                textCol: '#185FA5',
+                items: [
+                  {role:'Initiator', duties:['Flex in as Kiosk Coach','Keep toaster clean with red brush and red cloth','Wipe down steamer (red) and bun rack (blue) cloth','Change grill sticker roll when needed (don\'t leave position)']},
+                  {role:'Assembler', duties:['Maintain dressing table stock levels (inc SSL), correct pots','Keep dressing table below clean and organised as per BWS']},
+                  {role:'Finisher', duties:['Manage UHC levels via eProduction','Open/close trays, communicate to Batch Cookers','Keep dressing table below clean and organised as per BWS','Clean top of UHC and underneath UHC']},
+                  {role:'Batch Fried', duties:['Flex in as finishing chaser to Line 2','4 step clean loading/transfer tray','Keep McPlant/GC trays clean (purple/grey pot)','Skim vats and auto filter','Keep an eye on JIB (resetting after refilling)','Ensure apple pies in date','Ensure apple pie top rack in use']},
+                  {role:'Batch Grill', duties:['Flex in as chaser to Line 1','Empty grease troughs as required','4 step clean grill tools and dehy station','Maintain dry stock (seasoning, liners)','Change spatula/scraper blades when required','Ensure all SSL in place']},
+                ]
+              },
+              {
+                title: 'Dining Area',
+                colour: '#EAF3DE',
+                textCol: '#3A7D1E',
+                items: [
+                  {role:'Kiosk Coach', duties:['Station is set up as per BWS','Keep till roll stocked in Kiosks','Assist Customers at Collection area','Keep chemicals away when not in use','Keep condiments Bar stocked','Ensure Patio/bins in good state','Wipe down patio tables after rain','Toilet fully stocked and clean']},
+                ]
+              },
+              {
+                title: 'Everyone',
+                colour: '#f0f0ec',
+                textCol: '#555',
+                items: [
+                  {role:'All Staff', duties:['Change clothes every 30m','Wash hands every 30m','Sweep/mop area','Dust any screens/cabling','Keep station clean, stocked, no unneeded equipment','Station legs/wheels wiped down/cleaned','Communicate stock levels to Back Room/SM']},
+                ]
+              },
+              {
+                title: 'Fries',
+                colour: '#FAEEDA',
+                textCol: '#854F0B',
+                items: [
+                  {role:'Fries', duties:['Skim vats and auto filter','Keep an eye on JIB (resetting after refilling)','Keep scoops clean (spray every 30m / 4 step every 2hr)']},
+                ]
+              },
+              {
+                title: 'Temping & Prep',
+                colour: '#FCEBEB',
+                textCol: '#A32D2D',
+                items: [
+                  {role:'T&P (Primary)', duties:['Manage tempering','Waste Count completed','Replenish all dry stock (24hr)','Replenish all frozen stock (2hr)','Replenish Fry dispenser','Replenish sundae/shake mix','Bins changed/emptied','SSLs maintained for anything replenished','Remove cardboard to cage in back yard','Stack bun trays accordingly','Check oil levels (JIB)']},
+                ]
+              },
+              {
+                title: 'Booth 1 & 2',
+                colour: '#E6F1FB',
+                textCol: '#185FA5',
+                items: [
+                  {role:'Booth 1', duties:['Change sanitizer in cloth buckets','Wash cloths/mops','4 step cleaning/dive']},
+                  {role:'Booth 2', duties:['Checker flex as PF Runner','Flex as IS Runner if no DT Cars','Keep Receipt roll stocked']},
+                ]
+              },
+              {
+                title: 'OAT',
+                colour: '#EAF3DE',
+                textCol: '#3A7D1E',
+                items: [
+                  {role:'OAT', duties:['Flex in as Cashier at FC','Flex in as PF Runner','Flex in as Bev Bundler where needed','Stock FC, OAT and Aprons','Ensure all till rolls (FC/DA) are stocked','Keep floors, surfaces clean and mopped','OAT surface cleaned with red cloths, Lamps/Monitors dusted']},
+                ]
+              },
+              {
+                title: 'BDAP',
+                colour: '#FAEEDA',
+                textCol: '#854F0B',
+                items: [
+                  {role:'BDAP', duties:['Flurry blanks set up','Sweet snacking stocked and labels ready to go','Manage McFlurry spindle stocking and cleaning']},
+                ]
+              },
+            ].map(({title, colour, textCol, items}) => `
+            <div style="border-top:1px solid #f0f0ec">
+              <div style="padding:8px 16px;background:${colour}">
+                <span style="font-size:11px;font-weight:700;color:${textCol};text-transform:uppercase;letter-spacing:0.06em">${title}</span>
+              </div>
+              ${items.map(({role, duties}) => `
+              <div style="padding:10px 16px;border-bottom:1px solid #f9f9f6">
+                ${items.length > 1 ? `<div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px">${role}</div>` : ''}
+                <ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">
+                  ${duties.map(d=>`<li style="font-size:12px;color:#555;line-height:1.4">${d}</li>`).join('')}
+                </ul>
+              </div>`).join('')}
+            </div>`).join('')}
+
+          </div>
+        </div>
+
+      </div>
+      <div class="bottom-pad"></div>
+    </div>
+
   </div><!-- end content -->
 
   <!-- BOTTOM NAV -->
@@ -678,6 +892,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </button>
     <button class="nav-btn" id="nav-breaks" onclick="showPage('breaks')">
       <span class="nav-icon">☕</span>Breaks
+    </button>
+    <button class="nav-btn" id="nav-resources" onclick="showPage('resources')">
+      <span class="nav-icon">📂</span>Resources
     </button>
   </div>
 </div><!-- end app-screen -->
@@ -1285,6 +1502,7 @@ function initApp() {
   initToiletListener();
   initCleaningListener();
   initTodoListener();
+  initCompletedShiftTypesListener();
   if (breakDays.length > 0) initBreakListener();
   // Listen for break schedule uploaded by another device
   initBreakScheduleListener();
@@ -1313,6 +1531,15 @@ function updateDateTime() {
   const tag = document.getElementById('shift-tag-label');
   tag.textContent = shiftName;
   tag.className = 'shift-tag ' + shiftClass;
+}
+
+// ─── RESOURCES ───────────────────────────────────────────────────────
+function toggleResource(id) {
+  const el = document.getElementById(id);
+  const chevron = document.getElementById(id + '-chevron');
+  const isOpen = el.style.display === 'block';
+  el.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
 // ─── PAGE NAV ────────────────────────────────────────────────────────
@@ -1575,10 +1802,24 @@ let currentShiftPhase = 'pre';
 let currentShiftType = null; // 'open' | 'day' | 'close'
 const SHIFT_ICONS = { open: '🌅', day: '☀️', close: '🌙' };
 
+// ─── COMPLETED SHIFT TYPES (Firebase-backed) ─────────────────────────
+let _completedShiftTypes = new Set();
+let _completedShiftTypesListener = null;
+
+function initCompletedShiftTypesListener() {
+  if (_completedShiftTypesListener) _completedShiftTypesListener();
+  _completedShiftTypesListener = fbListen(todayKey() + '/completedShiftTypes', data => {
+    _completedShiftTypes = data ? new Set(data) : new Set();
+    // Re-render the shift selector so completed shifts are locked on all devices
+    renderShiftTypeSelector();
+  });
+}
+
 function getCompletedShiftTypes() {
-  // Returns set of shift types already signed off today
+  // Also check localStorage as fallback
   const s = getState();
-  return new Set((s.completedShiftTypes && s.completedShiftTypes[todayKey()]) || []);
+  const local = new Set((s.completedShiftTypes && s.completedShiftTypes[todayKey()]) || []);
+  return new Set([..._completedShiftTypes, ...local]);
 }
 
 function renderShiftTypeSelector() {
@@ -3256,16 +3497,19 @@ function confirmAddExtraStaff() {
 
   const startMins = timeToMins(start);
   breakSchedule[selectedBreakDay].push({ name, start, end, startMins });
-  // Re-sort by start time
   breakSchedule[selectedBreakDay].sort((a, b) => a.startMins - b.startMins);
 
   // Save to localStorage
   const s = getState();
   s.breakSchedule = breakSchedule;
+  s.breakDays = breakDays;
   saveState(s);
 
+  // Push updated schedule to Firebase so all devices see the new staff member
+  const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
+  fbSet('breakSchedule/' + weekKey, { breakSchedule, breakDays, updatedAt: Date.now() });
+
   document.getElementById('breaks-add-panel').style.display = 'none';
-  renderBreakSheet();
 }
 
 // ─── BREAK SHEET ALERTS & NIGHTLY PUSH ──────────────────────────────
