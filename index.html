@@ -2321,7 +2321,6 @@ function updateTodoBadge() {
 
 // ─── CLEANING CHECKLIST ──────────────────────────────────────────────
 let cleaningFilter = 'all';
-const cleaningUndoTimers = {}; // key -> timer id
 let cleaningDateOverride = null; // Date object or null
 
 function getCleaningDate() {
@@ -2400,70 +2399,11 @@ function getCleaningChecked() {
 
 function toggleCleaningTask(key, area, name, freq) {
   if (_cleaningChecked.has(key)) {
-    // Unticking — remove from Firebase
-    if (cleaningUndoTimers[key]) {
-      clearTimeout(cleaningUndoTimers[key]);
-      delete cleaningUndoTimers[key];
-    }
     db.ref(fbPath(todayKey() + '/cleaningChecked/' + key)).remove();
   } else {
-    // Ticking — add to Firebase, start undo countdown
     fbSet(todayKey() + '/cleaningChecked/' + key, { ts: Date.now(), manager: currentManager });
-    startCleaningUndo(key, area, name, freq);
-  }
-}
-
-function startCleaningUndo(key, area, name, freq) {
-  // Clear any existing timer
-  if (cleaningUndoTimers[key]) clearTimeout(cleaningUndoTimers[key]);
-
-  // Show undo toast
-  showUndoToast(key, area, name, freq);
-
-  // After 10s, push to sheets
-  cleaningUndoTimers[key] = setTimeout(() => {
-    delete cleaningUndoTimers[key];
-    hideUndoToast(key);
     pushCleaningToSheets(area, name, freq);
-  }, 10000);
-}
-
-function undoCleaningTask(key) {
-  if (cleaningUndoTimers[key]) {
-    clearTimeout(cleaningUndoTimers[key]);
-    delete cleaningUndoTimers[key];
   }
-  hideUndoToast(key);
-  db.ref(fbPath(todayKey() + '/cleaningChecked/' + key)).remove();
-}
-
-function showUndoToast(key, area, name, freq) {
-  let container = document.getElementById('undo-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'undo-container';
-    container.style.cssText = 'position:fixed;bottom:90px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:50;pointer-events:none';
-    document.body.appendChild(container);
-  }
-  const safeKey = key.replace(/'/g, "\\'");
-  const toast = document.createElement('div');
-  toast.id = 'undo-' + btoa(key).replace(/=/g,'');
-  toast.style.cssText = 'background:#333;color:#fff;padding:8px 6px 8px 14px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:10px;pointer-events:all;max-width:320px;width:calc(100% - 40px)';
-  toast.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✓ ${name}</span>
-    <button onclick="undoCleaningTask('${safeKey}')" style="background:#d4000a;color:#fff;border:none;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0">Undo</button>`;
-  container.appendChild(toast);
-
-  // Countdown bar
-  const bar = document.createElement('div');
-  bar.style.cssText = 'position:absolute;bottom:0;left:0;height:3px;background:#d4000a;border-radius:0 0 20px 20px;width:100%;transition:width 10s linear';
-  toast.appendChild(bar);
-  setTimeout(() => { bar.style.width = '0%'; }, 50);
-}
-
-function hideUndoToast(key) {
-  const id = 'undo-' + btoa(key).replace(/=/g,'');
-  const el = document.getElementById(id);
-  if (el) el.remove();
 }
 
 function pushCleaningToSheets(area, name, freq) {
@@ -3028,7 +2968,10 @@ function parseBreakSchedule(allRows) {
   s.breakDays = breakDays;
   saveState(s);
 
-  // Push parsed schedule to Firebase for other devices
+  // Filter to only current/future days before pushing to Firebase
+  removePastBreakDays();
+
+  // Push filtered schedule to Firebase for other devices
   const weekKey = breakDays.length > 0 ? breakDays[0].split(' ')[1] + '_' + (new Date().getFullYear()) : todayKey();
   fbSet('breakSchedule/' + weekKey, { breakSchedule, breakDays, updatedAt: Date.now() });
 
@@ -3176,23 +3119,16 @@ let _breakScheduleListener = null;
 
 function initBreakScheduleListener() {
   if (_breakScheduleListener) _breakScheduleListener();
-  // Listen for the most recent week's schedule
-  // We listen to the whole breakSchedule node and pick the latest
   _breakScheduleListener = fbListen('breakSchedule', data => {
     if (!data) return;
-    // Find most recent week key
-    const keys = Object.keys(data).sort((a,b) => {
-      const [da, ya] = a.split('_').map(Number);
-      const [db, yb] = b.split('_').map(Number);
-      return (yb - ya) || (db - da);
-    });
-    if (keys.length === 0) return;
-    const latest = data[keys[0]];
-    if (!latest || !latest.breakDays || latest.breakDays.length === 0) return;
 
-    // Only update if we don't already have a schedule loaded locally
-    if (breakDays.length > 0) return;
+    // Find most recently uploaded schedule by updatedAt timestamp
+    const entries = Object.values(data).filter(e => e && e.breakDays && e.breakDays.length > 0);
+    if (entries.length === 0) return;
+    entries.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const latest = entries[0];
 
+    // Always apply — Firebase is the source of truth
     breakSchedule = latest.breakSchedule;
     breakDays = latest.breakDays;
 
@@ -3210,7 +3146,7 @@ function initBreakScheduleListener() {
       || breakDays.find(d => d.startsWith(todayShort))
       || breakDays[0];
 
-    // Show schedule loaded state
+    // Show correct UI state based on role
     if (canUploadBreaksPDF()) {
       document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
       document.getElementById('breaks-upload-area').style.display = 'block';
