@@ -210,16 +210,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="login-logo">🍟</div>
   <div class="login-title">Caprani</div>
   <div class="login-sub">Sign in to continue</div>
-  <select class="login-select" id="manager-select">
-    <option value="">Select your name...</option>
-    <option value="Anna Beleznai">Anna Beleznai</option>
-    <option value="Dora Danko">Dora Danko</option>
-    <option value="John Quirke">John Quirke</option>
-  </select>
-  <div class="pin-label">Enter your PIN</div>
-  <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-input" placeholder="••••">
-  <button class="login-btn" onclick="doLogin()">Sign in</button>
-  <div class="login-error" id="login-error">Incorrect PIN. Please try again.</div>
+
+  <!-- Step 1: Restaurant -->
+  <div id="login-step-1">
+    <div class="pin-label">Select your restaurant</div>
+    <select class="login-select" id="restaurant-select" onchange="onRestaurantSelect()">
+      <option value="">Select restaurant...</option>
+      <option value="7131">Nenagh (7131)</option>
+      <option value="7177">Thurles (7177)</option>
+    </select>
+  </div>
+
+  <!-- Step 2: Username + PIN (hidden until restaurant selected) -->
+  <div id="login-step-2" style="display:none;width:100%">
+    <div class="pin-label">Username</div>
+    <input class="pin-input" type="text" id="username-input" placeholder="Enter username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div class="pin-label" style="margin-top:12px">PIN</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-input" placeholder="••••">
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div style="font-size:12px;color:#aaa;margin-top:8px;cursor:pointer;text-align:center" onclick="resetLoginSteps()">← Change restaurant</div>
+  </div>
+
+  <div class="login-error" id="login-error">Incorrect username or PIN.</div>
 </div>
 
 <!-- APP SCREEN -->
@@ -566,16 +578,78 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 // ─── DATA ───────────────────────────────────────────────────────────
-// PINs stored as SHA-256 hashes — never plain text in source
-const MANAGERS = {
-  "Anna Beleznai": "fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587",
-  "Dora Danko":    "4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc",
-  "John Quirke":   "778761ba6fc79beab2e951ec681c2ce8d77a1948bfe3d53dd282a09d4abc0405"
+// ─── RESTAURANTS ─────────────────────────────────────────────────────
+// All sensitive data is SHA-256 hashed — never plain text in source
+const RESTAURANTS = {
+  '7131': {
+    label: 'Nenagh',
+    sheetsUrl: 'https://script.google.com/macros/s/AKfycbwXxsueERrPeCKoCB3uCUghODNUIQJMmh0E1kcdUDV0iCZRu4GRpuPeaVffe7UnMB0rEA/exec'
+  },
+  '7177': {
+    label: 'Thurles',
+    sheetsUrl: 'https://script.google.com/macros/s/AKfycbwTxu-eyAuNJioqzv6ksD6BBG4jA7YpnfxAvfM175Q68nkNzUCVvlc-sASjk6qKDiaFpA/exec'
+  }
 };
 
-async function hashPin(pin) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+// ─── USERS ────────────────────────────────────────────────────────────
+// username, pin and displayName are all SHA-256 hashed
+// restaurants: array of restaurant IDs this user has access to
+// role: owner | salaried | shift_manager | area_leader
+const USERS = [
+  {
+    username:    'c84d384f2a25cca2a8fde5eb61b0f81f728e5f778a232211b176ea80143877bc', // jq
+    pin:         '778761ba6fc79beab2e951ec681c2ce8d77a1948bfe3d53dd282a09d4abc0405', // 5081
+    displayName: '2021d7d1f5b2edaab4e301ea612203ca1884559d2b186419487cf846abc86db6', // John Quirke
+    label:       'JQ',
+    role:        'owner',
+    restaurants: ['7131', '7177']
+  },
+  {
+    username:    '9b7ecc6eeb83abf9ade10fe38865df4499be3568dcc507ae2ec3b44989cb0093', // dd
+    pin:         '4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc', // 7972
+    displayName: 'ea0246624bc061875ee6d98e08171a6b2ca419fa3b3818986da5063b6d027124', // Dora Danko
+    label:       'DD',
+    role:        'salaried',
+    restaurants: ['7131']
+  },
+  {
+    username:    'fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603', // ab
+    pin:         'fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587', // 6481
+    displayName: '22cbfe0aa93fe51165c3f566c1717e349164494dd06108e1f5600416eefb6e0b', // Anna Beleznai
+    label:       'AB',
+    role:        'shift_manager',
+    restaurants: ['7131']
+  }
+];
+
+// Runtime state — set on login
+let currentRestaurantId = null;
+let SHEETS_URL = null;
+
+async function hashString(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function hashPin(pin) { return hashString(pin); }
+
+function onRestaurantSelect() {
+  const rid = document.getElementById('restaurant-select').value;
+  if (rid) {
+    document.getElementById('login-step-2').style.display = 'block';
+    document.getElementById('username-input').focus();
+  } else {
+    document.getElementById('login-step-2').style.display = 'none';
+  }
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function resetLoginSteps() {
+  document.getElementById('restaurant-select').value = '';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('username-input').value = '';
+  document.getElementById('pin-input').value = '';
+  document.getElementById('login-error').style.display = 'none';
 }
 
 // PRE-SHIFT tasks — area, name, priority (a/b/c/d)
@@ -799,10 +873,10 @@ let currentPage = 'shift';
 
 // Persisted in localStorage
 function getState() {
-  try { return JSON.parse(localStorage.getItem('caprani_ops') || '{}'); } catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('caprani_ops_' + (currentRestaurantId || 'shared')) || '{}'); } catch(e) { return {}; }
 }
 function saveState(s) {
-  localStorage.setItem('caprani_ops', JSON.stringify(s));
+  localStorage.setItem('caprani_ops_' + (currentRestaurantId || 'shared'), JSON.stringify(s));
 }
 
 function todayKey() {
@@ -813,24 +887,50 @@ function todayKey() {
 const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in ms
 
 async function doLogin() {
-  const name = document.getElementById('manager-select').value;
-  const pin  = document.getElementById('pin-input').value;
-  const err  = document.getElementById('login-error');
-  if (!name || !MANAGERS[name]) { err.style.display='block'; err.textContent='Please select your name.'; return; }
-  const hashed = await hashPin(pin);
-  if (hashed !== MANAGERS[name]) { err.style.display='block'; err.textContent='Incorrect PIN. Please try again.'; return; }
+  const rid      = document.getElementById('restaurant-select').value;
+  const username = document.getElementById('username-input').value.trim();
+  const pin      = document.getElementById('pin-input').value;
+  const err      = document.getElementById('login-error');
+
+  if (!rid) { err.style.display='block'; err.textContent='Please select a restaurant.'; return; }
+  if (!username) { err.style.display='block'; err.textContent='Please enter your username.'; return; }
+  if (!pin) { err.style.display='block'; err.textContent='Please enter your PIN.'; return; }
+
+  const hashedUsername = await hashString(username);
+  const hashedPin      = await hashString(pin);
+
+  // Find matching user who has access to this restaurant
+  const user = USERS.find(u =>
+    u.username === hashedUsername &&
+    u.pin === hashedPin &&
+    u.restaurants.includes(rid)
+  );
+
+  if (!user) {
+    err.style.display='block';
+    err.textContent='Incorrect username or PIN, or no access to this restaurant.';
+    return;
+  }
+
   err.style.display='none';
-  currentManager = name;
+  currentManager      = user.label;
+  currentRestaurantId = rid;
+  SHEETS_URL          = RESTAURANTS[rid].sheetsUrl;
+
+  // Save session
   const s = getState();
-  s.session = { manager: name, loginTime: Date.now() };
+  s.session = { manager: user.label, restaurantId: rid, loginTime: Date.now() };
   saveState(s);
+  sessionStorage.setItem('capraniOpsActive', 'true');
+
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
-  document.getElementById('top-bar-user').textContent = name;
+  document.getElementById('top-bar-user').textContent = user.label + ' · ' + RESTAURANTS[rid].label;
   initApp();
 }
 
 document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('username-input').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('pin-input').focus(); });
 
 function doLogout() {
   const s = getState();
@@ -840,16 +940,21 @@ function doLogout() {
   delete s.session;
   saveState(s);
   sessionStorage.removeItem('capraniOpsActive');
-  currentManager = null;
-  currentShiftType = null;
+  currentManager      = null;
+  currentRestaurantId = null;
+  SHEETS_URL          = null;
+  currentShiftType    = null;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('shift-content').style.display='none';
   document.getElementById('shift-type-selector').style.display='block';
   document.getElementById('change-shift-btn').style.display='none';
   document.getElementById('shift-tag-label').textContent='';
+  document.getElementById('username-input').value='';
   document.getElementById('pin-input').value='';
-  document.getElementById('manager-select').value='';
+  document.getElementById('restaurant-select').value='';
+  document.getElementById('login-step-2').style.display='none';
+  document.getElementById('login-error').style.display='none';
 }
 
 // ─── APP INIT ────────────────────────────────────────────────────────
@@ -2110,7 +2215,7 @@ function alertDismiss() {
 }
 
 // ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwXxsueERrPeCKoCB3uCUghODNUIQJMmh0E1kcdUDV0iCZRu4GRpuPeaVffe7UnMB0rEA/exec';
+// SHEETS_URL is set dynamically at login based on restaurant — see RESTAURANTS config above
 
 function pushCheckToSheets(slot, checkedAt) {
   const params = new URLSearchParams({
@@ -2828,15 +2933,17 @@ function cleanupOldData() {
   // a new tab is opened, but survives a refresh.
   const isRefresh = sessionStorage.getItem('capraniOpsActive') === 'true';
   const s = getState();
-  if (isRefresh && s.session && s.session.manager && MANAGERS[s.session.manager]) {
+  if (isRefresh && s.session && s.session.manager && s.session.restaurantId && RESTAURANTS[s.session.restaurantId]) {
     const elapsed = Date.now() - s.session.loginTime;
     if (elapsed < SESSION_DURATION) {
-      currentManager = s.session.manager;
+      currentManager      = s.session.manager;
+      currentRestaurantId = s.session.restaurantId;
+      SHEETS_URL          = RESTAURANTS[currentRestaurantId].sheetsUrl;
       s.session.loginTime = Date.now();
       saveState(s);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app-screen').style.display = 'flex';
-      document.getElementById('top-bar-user').textContent = currentManager;
+      document.getElementById('top-bar-user').textContent = currentManager + ' · ' + RESTAURANTS[currentRestaurantId].label;
       initApp();
     } else {
       delete s.session;
