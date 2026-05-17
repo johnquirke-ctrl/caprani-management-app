@@ -1262,7 +1262,7 @@ function initApp() {
       || breakDays.find(d => d.startsWith(todayShort))
       || breakDays[0];
     if (canUploadBreaksPDF()) {
-      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="confirmResetBreaks()">Upload different PDF</span></div>';
       document.getElementById('breaks-upload-area').style.display = 'block';
       document.getElementById('breaks-no-upload-msg').style.display = 'none';
     } else {
@@ -1428,7 +1428,6 @@ function renderResources() {
     ['Cleaning Cards/Weekly Monthly Quarterly/SS140D-Carpigiani K3-Calibration.pdf','Shake Machine K3 Calibration (W)'],
     ['Cleaning Cards/Weekly Monthly Quarterly/SS141H-Carpigiani K3-Clean.pdf','Shake Machine K3 Clean (W)'],
     ['Cleaning Cards/Weekly Monthly Quarterly/SS141I-Carpigiani K3-Assemble.pdf','Shake Machine K3 Assemble (W)'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS142-All Models-Check Condition.pdf','All Models Check Condition'],
     ['Cleaning Cards/Weekly Monthly Quarterly/SS144A-Carpagani K3-Clean Syrup.pdf','Shake Machine K3 Syrup Lines (6M)'],
     ['Cleaning Cards/Weekly Monthly Quarterly/SSXXX-All Models-Red Bucket Use.pdf','Shake Machine Red Buckets (W)'],
     ['Cleaning Cards/Weekly Monthly Quarterly/ST160A-Rapid Steamer-Delime Chamber.pdf','Steamers (M)'],
@@ -1457,7 +1456,6 @@ function renderResources() {
     ['Maintenance/Monthly/HU065A-Prince Castle Pie Merchandiser-Calibration.pdf','Pie Merchandiser Calibration'],
     ['Maintenance/Monthly/MC-Label3 Cleaning Card V2 updated.pdf','Label3 Cleaning'],
     ['Maintenance/Monthly/MC096-Microwave Amana-Efficiency Test.pdf','Microwave Efficiency Test'],
-    ['Maintenance/Monthly/Microwave_Efficiency_Test.pdf','Microwave Efficiency Test 2'],
     ['Maintenance/Monthly/OE271 Handryers-Detail Clean.pdf','Hand Dryers Detail Clean'],
     ['Maintenance/Monthly/PR64DP-UHC Table-Surface Temp Check.pdf','UHC Table Surface Temp Check'],
     ['Maintenance/Monthly/PS234-Office PC-Check Condition.pdf','Office PC Check'],
@@ -3194,7 +3192,7 @@ function parseBreakSchedule(allRows) {
   document.getElementById('breaks-loading').style.display = 'none';
   if (canUploadBreaksPDF()) {
     document.getElementById('breaks-upload-area').style.display = 'block';
-    document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+    document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="confirmResetBreaks()">Upload different PDF</span></div>';
     document.getElementById('breaks-no-upload-msg').style.display = 'none';
   } else {
     document.getElementById('breaks-upload-area').style.display = 'none';
@@ -3220,6 +3218,11 @@ function parseBreakSchedule(allRows) {
   renderBreakSheet();
   document.getElementById('breaks-day-selector').style.display = 'block';
   initBreakListener();
+}
+
+function confirmResetBreaks() {
+  if (!confirm('Are you sure? This will overwrite all current week\'s data.')) return;
+  resetBreaksUpload();
 }
 
 function resetBreaksUpload() {
@@ -3392,7 +3395,7 @@ function initBreakScheduleListener() {
 
     // Show correct UI state based on role
     if (canUploadBreaksPDF()) {
-      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="resetBreaksUpload()">Upload different PDF</span></div>';
+      document.getElementById('breaks-upload-area').innerHTML = '<div style="text-align:center;padding:0.5rem"><span style="font-size:13px;color:#1D9E75;font-weight:500">&#10003; Schedule loaded</span> <span style="font-size:12px;color:#888;margin-left:8px;cursor:pointer;text-decoration:underline" onclick="confirmResetBreaks()">Upload different PDF</span></div>';
       document.getElementById('breaks-upload-area').style.display = 'block';
       document.getElementById('breaks-no-upload-msg').style.display = 'none';
     } else {
