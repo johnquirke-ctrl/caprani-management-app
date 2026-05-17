@@ -2644,16 +2644,43 @@ function toggleCleaningTask(key, area, name, freq) {
   }
 }
 
+function getLastDueDate(task) {
+  // Walk back up to 366 days to find when task was last due
+  const today = getCleaningDate();
+  for (let i = 0; i <= 366; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    if (isTaskDueOn(task, d)) return d;
+  }
+  return today;
+}
+
 function pushCleaningToSheets(area, name, freq) {
   const now = new Date();
+  const today = getCleaningDate();
+
+  // Find the task to calculate due date and days overdue
+  const task = CLEANING_TASKS.find(t => t.area === area && t.name === name);
+  let dateDue = todayKey();
+  let daysOverdue = 0;
+  if (task) {
+    const lastDue = getLastDueDate(task);
+    dateDue = lastDue.toISOString().slice(0,10);
+    // Days overdue = days between last due date and today
+    const msPerDay = 24 * 60 * 60 * 1000;
+    daysOverdue = Math.round((today - lastDue) / msPerDay);
+  }
+
   const params = new URLSearchParams({
-    action:  'cleaning',
-    date:    todayKey(),
-    time:    now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'}),
-    manager: currentManager,
-    area:    area,
-    task:    name,
-    freq:    freqLabel(freq)
+    action:      'cleaning',
+    date:        todayKey(),
+    time:        now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'}),
+    manager:     currentManager,
+    area:        area,
+    task:        name,
+    freq:        freqLabel(freq),
+    dateDue:     dateDue,
+    daysOverdue: daysOverdue
   });
   fetch(SHEETS_URL + '?' + params.toString())
     .then(r => r.json())
@@ -3435,7 +3462,14 @@ function saveBreakChecked() {
 function toggleBreak(name, day, type) {
   const key = name + '_' + day;
   if (!breakChecked[key]) breakChecked[key] = {};
-  breakChecked[key][type] = !breakChecked[key][type];
+  const nowTicked = !breakChecked[key][type];
+  breakChecked[key][type] = nowTicked;
+  // Store who ticked it (for Google Sheets report)
+  if (nowTicked) {
+    breakChecked[key][type + '_by'] = currentManager;
+  } else {
+    delete breakChecked[key][type + '_by'];
+  }
   saveBreakChecked();
   renderBreakSheet();
 }
