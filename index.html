@@ -1377,7 +1377,7 @@ function renderResources() {
     ['Cleaning Cards/Closing/SS_Floor_Cleaning_Closed.pdf','Floor Cleaning'],
     ['Cleaning Cards/Closing/SS_Toilets.pdf','Toilets'],
     ['Cleaning Cards/Closing/Waterless_Urinals.pdf','Waterless Urinals'],
-  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
 
   const cleaningDaily = [
     ['Cleaning Cards/Daily/4_Step_Cleaning.pdf','4 Step Cleaning'],
@@ -1391,54 +1391,134 @@ function renderResources() {
     ['Cleaning Cards/Daily/SS_Floor_cleaning_in_use.pdf','Floor'],
     ['Cleaning Cards/Daily/SS_Self_Filtering_Vats.pdf','Filter Box'],
     ['Cleaning Cards/Daily/Stainless.pdf','Stainless Steel'],
-  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
 
   const cleaningWMQ = [
-    ['Cleaning Cards/Weekly Monthly Quarterly/58496-02 NO THAW Cleaning MCD UK CARD.pdf','NO THAW Cleaning'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/61646-01 McD_EN Grill Recovery Card.pdf','Grill Recovery Card'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/61807 Washing Machines McD UK CARD.pdf','Washing Machines'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/61813 Super Contact Cleaner McD UK CARD.pdf','Super Contact Cleaner'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/61815.01 Dishwasher McD UK CARD.pdf','Dishwasher'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/BE011-All Coffee Machines-Calibration.pdf','Coffee Machines Calibration'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/BE022-Cornelius ABS-Weekly Ice Dispenser Cleaning.pdf','Ice Dispenser Cleaning'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/BI293-BIC450-Weekly Clean.pdf','BIC450 Weekly Clean'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/BI294-BIC450-Monthly Clean.pdf','BIC450 Monthly Clean'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/BIB_Connectors_BE013.pdf','BIB Connectors'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Bucket_Bins.pdf','Bucket Bins'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Cark_Park_Spills_Mar12.pdf','Car Park Spills'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/CarParks.pdf','Car Parks'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Ceiling_Light_Diffuser_Cleaning_Card_July_2014.pdf','Ceiling Light Diffuser'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Cleaning Card - Glass, Walls and Ceilings - New Multi-surface Tool.pdf','Glass, Walls & Ceilings'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Drain Cleaning - Bio-shield.pdf','Drain Cleaning Bio-shield'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/IT_Equipment.pdf','IT Equipment'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/KC_GB GrillsRecovery.pdf','Grills Recovery'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/KC_GB_Conveyor Belt_PMC.pdf','Conveyor Belt PMC'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/LED PANEL CLEANING CARD July 2023.pdf','LED Panel Cleaning'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Non Food Spill Clean Up.pdf','Non Food Spill Clean Up'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/PR34WO1-DCFT Toaster-Weekly Clean.pdf','Toaster Weekly Clean'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/Roof_Drainage.pdf','Roof Drainage'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_External_Areas.pdf','External Areas'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_External_Customer_Areas.pdf','External Customer Areas'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_General_Equipment_Back.pdf','General Equipment Back'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_General_Equipment_front.pdf','General Equipment Front'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_High_Level.pdf','High Level'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Pulling_Fryers.pdf','Pulling Fryers'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Stockroom.pdf','Stockroom'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Walls+Doors.pdf','Walls & Doors'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS140D-Carpigiani K3-Calibration.pdf','Carpigiani K3 Calibration'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS141H-Carpigiani K3-Clean.pdf','Carpigiani K3 Clean'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS141I-Carpigiani K3-Assemble.pdf','Carpigiani K3 Assemble'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/58496-02 NO THAW Cleaning MCD UK CARD.pdf','Walk In Freezer and Chiller (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/61646-01 McD_EN Grill Recovery Card.pdf','Grill Recovery (Q)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/61807 Washing Machines McD UK CARD.pdf','Washing Machines (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/61813 Super Contact Cleaner McD UK CARD.pdf','Super Contact Cleaner (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/61815.01 Dishwasher McD UK CARD.pdf','Dishwasher (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/BE011-All Coffee Machines-Calibration.pdf','Coffee Machines (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/BE022-Cornelius ABS-Weekly Ice Dispenser Cleaning.pdf','Ice Dispenser (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/BI293-BIC450-Weekly Clean.pdf','Blended Ice (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/BI294-BIC450-Monthly Clean.pdf','Blended Ice (M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/BIB_Connectors_BE013.pdf','BIBs (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Bucket_Bins.pdf','Buckets and Bins (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Cark_Park_Spills_Mar12.pdf','Car Park Spills (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/CarParks.pdf','Car Parks (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Ceiling_Light_Diffuser_Cleaning_Card_July_2014.pdf','Lights (M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Cleaning Card - Glass, Walls and Ceilings - New Multi-surface Tool.pdf','Glass, Walls & Ceilings (Q)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Drain Cleaning - Bio-shield.pdf','Drain Cleaning (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/IT_Equipment.pdf','Tech (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/KC_GB GrillsRecovery.pdf','Grill Recovery (Q)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/KC_GB_Conveyor Belt_PMC.pdf','Conveyor Belt (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/LED PANEL CLEANING CARD July 2023.pdf','LED Panel (M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Non Food Spill Clean Up.pdf','Non Food Spills (AN)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/PR34WO1-DCFT Toaster-Weekly Clean.pdf','Toaster (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/Roof_Drainage.pdf','Roof (M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_External_Areas.pdf','External Areas (AN)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_External_Customer_Areas.pdf','External Customer Areas (AN)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_General_Equipment_Back.pdf','General Equipment Back (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_General_Equipment_front.pdf','General Equipment Front (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_High_Level.pdf','High Level (AN)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Pulling_Fryers.pdf','Pulling Fryers (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Stockroom.pdf','Back Room (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS_Walls+Doors.pdf','Walls and Doors (M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS140D-Carpigiani K3-Calibration.pdf','Shake Machine K3 Calibration (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS141H-Carpigiani K3-Clean.pdf','Shake Machine K3 Clean (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS141I-Carpigiani K3-Assemble.pdf','Shake Machine K3 Assemble (W)'],
     ['Cleaning Cards/Weekly Monthly Quarterly/SS142-All Models-Check Condition.pdf','All Models Check Condition'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SS144A-Carpagani K3-Clean Syrup.pdf','Carpigiani K3 Clean Syrup'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/SSXXX-All Models-Red Bucket Use.pdf','All Models Red Bucket Use'],
-    ['Cleaning Cards/Weekly Monthly Quarterly/ST160A-Rapid Steamer-Delime Chamber.pdf','Rapid Steamer Delime Chamber'],
-  ].map(([f,l]) => resFile(BASE+f, l)).join('');
+    ['Cleaning Cards/Weekly Monthly Quarterly/SS144A-Carpagani K3-Clean Syrup.pdf','Shake Machine K3 Syrup Lines (6M)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/SSXXX-All Models-Red Bucket Use.pdf','Shake Machine Red Buckets (W)'],
+    ['Cleaning Cards/Weekly Monthly Quarterly/ST160A-Rapid Steamer-Delime Chamber.pdf','Steamers (M)'],
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
 
   const cleaningInner =
     resFile(BASE+'Cleaning Cards/Cleaning_Catalogue.pdf', '📄 Cleaning Catalogue') +
     resSubSection('res-closing', 'Closing', cleaningClosing) +
     resSubSection('res-daily', 'Daily', cleaningDaily) +
-    resSubSection('res-wmq', 'Weekly / Monthly / Quarterly', cleaningWMQ);
+    resSubSection('res-wmq', 'Weekly Monthly Quarterly', cleaningWMQ);
+
+  const maintAnnually = [
+    ['Maintenance/Annually/BE001-All Models-Prefilter Cartridge Replacement.pdf','Prefilter Cartridge Replacement'],
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const maintMonthly = [
+    ['Maintenance/Monthly/BE000-Multiplex-Drain Air Compressors.pdf','Drain Air Compressors'],
+    ['Maintenance/Monthly/BE003-All Models-Check Condition&Brush Clean.pdf','Check Condition & Brush Clean'],
+    ['Maintenance/Monthly/BE004-All Models-CO2 Air Pressures.pdf','CO2 Air Pressures'],
+    ['Maintenance/Monthly/BE011-All Coffee Machines-Calibration.pdf','Coffee Machine Calibration'],
+    ['Maintenance/Monthly/BI294-BIC450-Monthly Clean.pdf','Blended Ice Monthly Clean'],
+    ['Maintenance/Monthly/FL175-Frymaster & LOV Fryers Filtering-Condition Check.pdf','Frymaster & LOV Filtering Check'],
+    ['Maintenance/Monthly/FL173-Shortening Disposal Unit-Condition Check.pdf','Shortening Disposal Unit'],
+    ['Maintenance/Monthly/FR033-Franke Fry Dispenser-Clean Filter.pdf','Fry Dispenser Filter'],
+    ['Maintenance/Monthly/HU063-UHC-Calibration.pdf','UHC Calibration'],
+    ['Maintenance/Monthly/HU065A-Prince Castle Pie Merchandiser-Calibration.pdf','Pie Merchandiser Calibration'],
+    ['Maintenance/Monthly/MC-Label3 Cleaning Card V2 updated.pdf','Label3 Cleaning'],
+    ['Maintenance/Monthly/MC096-Microwave Amana-Efficiency Test.pdf','Microwave Efficiency Test'],
+    ['Maintenance/Monthly/Microwave_Efficiency_Test.pdf','Microwave Efficiency Test 2'],
+    ['Maintenance/Monthly/OE271 Handryers-Detail Clean.pdf','Hand Dryers Detail Clean'],
+    ['Maintenance/Monthly/PR64DP-UHC Table-Surface Temp Check.pdf','UHC Table Surface Temp Check'],
+    ['Maintenance/Monthly/PS234-Office PC-Check Condition.pdf','Office PC Check'],
+    ['Maintenance/Monthly/Ratio ABS 2.0 MCD PM Card.pdf','Ratio ABS 2.0'],
+    ['Maintenance/Monthly/RE196-Refrigeration-Check Condition.pdf','Refrigeration Check'],
+    ['Maintenance/Monthly/RE199-Refrigeration Backup Freezer&Chiller-Check Condition.pdf','Backup Freezer & Chiller Check'],
+    ['Maintenance/Monthly/Roof_Drainage.pdf','Roof Drainage'],
+    ['Maintenance/Monthly/SD183-Sauce Guns-Calibration.pdf','Sauce Guns Calibration'],
+    ['Maintenance/Monthly/SS142-All Models-Check Condition.pdf','All Models Check Condition'],
+    ['Maintenance/Monthly/ST159C1-Rapid Steamer-Calibration.pdf','Rapid Steamer Calibration'],
+    ['Maintenance/Monthly/TS120-Muffin Toaster-Check Load Timers.pdf','Muffin Toaster Check Timers'],
+    ['Maintenance/Monthly/TS124-All Reg & Mac Toasters-Bun Spatula Maintenance.pdf','Toasters Bun Spatula Maintenance'],
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const maintQuarterly = [
+    ['Maintenance/Quarterly/61646-01 McD_EN Grill Recovery Card.pdf','Grill Recovery'],
+    ['Maintenance/Quarterly/FL174-OSCAR-Cleaning.pdf','OSCAR Cleaning'],
+    ['Maintenance/Quarterly/FR032-Frymaster H52-Boilout.pdf','Frymaster H52 Boilout'],
+    ['Maintenance/Quarterly/FR036-Frymaster Built in Filtering System-Replace 0rings.pdf','Frymaster Filtering O-rings'],
+    ['Maintenance/Quarterly/TS126-DCFT Toaster-Belt Change.pdf','Toaster Belt Change'],
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const maintWeekly = [
+    ['Maintenance/Weekly/BE005A-Analox Ax60-CO2 Detector Test.pdf','CO2 Detector Test'],
+    ['Maintenance/Weekly/BI291-BIC450+600-Calibration.pdf','Blended Ice Calibration'],
+    ['Maintenance/Weekly/BI293-BIC450-Weekly Clean.pdf','Blended Ice Weekly Clean'],
+    ['Maintenance/Weekly/BIB_Connectors_BE013.pdf','BIB Connectors'],
+    ['Maintenance/Weekly/BR080-Egg Cooker 1200-Calibration.pdf','Egg Cooker Calibration'],
+    ['Maintenance/Weekly/EL260-Electrical-Condition Check.pdf','Electrical Condition Check'],
+    ['Maintenance/Weekly/FR025-Frymaster H14 H52-Temperature Check.pdf','Frymaster Temperature Check'],
+    ['Maintenance/Weekly/FR028-Fryers-Condition Check.pdf','Fryers Condition Check'],
+    ['Maintenance/Weekly/FR029-Fry Bagging Station-Condition Check.pdf','Fry Bagging Station'],
+    ['Maintenance/Weekly/FR031-Frymaster and Pitco-Hi Limit Probes.pdf','Hi Limit Probes'],
+    ['Maintenance/Weekly/GR046D-Garland 2+1 Grills-Temperature Calibration.pdf','Grill Temperature Calibration'],
+    ['Maintenance/Weekly/GR047-Garland 2&3 Platen Grills-Condition Check.pdf','Platen Grills Condition Check'],
+    ['Maintenance/Weekly/HU064-UHC-Condition Check.pdf','UHC Condition Check'],
+    ['Maintenance/Weekly/KC_GB_Conveyor Belt_PMC.pdf','Conveyor Belt'],
+    ['Maintenance/Weekly/MC097-Microwave Amana-Maintenance Check.pdf','Microwave Maintenance Check'],
+    ['Maintenance/Weekly/MC098-MerryChef-Perform Maintence Check.pdf','MerryChef Maintenance Check'],
+    ['Maintenance/Weekly/OE272-Miele Washing Machine-Detail Clean.pdf','Washing Machine Detail Clean'],
+    ['Maintenance/Weekly/OE273-TLoop Hearing System.pdf','T-Loop Hearing System'],
+    ['Maintenance/Weekly/OE274 HOBART AMXXL DISHWASHER - Operating Instructions.pdf','Dishwasher Operating Instructions'],
+    ['Maintenance/Weekly/PR34WO1-DCFT Toaster Conveyor Belt-Weekly Clean.pdf','Toaster Conveyor Belt Clean'],
+    ['Maintenance/Weekly/PR64DP-UHC Table-Surface Temp Check.pdf','UHC Table Surface Temp Check'],
+    ['Maintenance/Weekly/PS232-Till System-Check Condition.pdf','Till System Check'],
+    ['Maintenance/Weekly/PS233-Card Reader-Security Check.pdf','Card Reader Security Check'],
+    ['Maintenance/Weekly/RE194-Main Freezer&Chiller-Check Condition.pdf','Main Freezer & Chiller Check'],
+    ['Maintenance/Weekly/SD184-DA Sauce Dispenser-Clean.pdf','Sauce Dispenser Clean'],
+    ['Maintenance/Weekly/SS140-Taylor C602-Calibration.pdf','Shake Machine C602 Calibration'],
+    ['Maintenance/Weekly/SS141F-Taylor C602-Clean.pdf','Shake Machine C602 Clean'],
+    ['Maintenance/Weekly/SS141G-Taylor C602-Assemble.pdf','Shake Machine C602 Assemble'],
+    ['Maintenance/Weekly/SS144-Taylor C602-Clean Syrup.pdf','Shake Machine C602 Syrup'],
+    ['Maintenance/Weekly/SSXXX-All Models-Red Bucket Use.pdf','Shake Machine Red Buckets'],
+    ['Maintenance/Weekly/TS121-Muffin Toaster-Maintenance.pdf','Muffin Toaster Maintenance'],
+  ].sort((a,b)=>a[1].localeCompare(b[1])).map(([f,l]) => resFile(BASE+f, l)).join('');
+
+  const maintInner =
+    resSubSection('res-maint-annually', 'Annually', maintAnnually) +
+    resSubSection('res-maint-monthly', 'Monthly', maintMonthly) +
+    resSubSection('res-maint-quarterly', 'Quarterly', maintQuarterly) +
+    resSubSection('res-maint-weekly', 'Weekly', maintWeekly);
 
   const operationsInner =
     '<div style="padding:4px 0">' +
@@ -1446,36 +1526,10 @@ function renderResources() {
     resFile(BASE+'Operations/secondary-responsibilities.pdf', '📋 Secondary Responsibilities') +
     '</div>';
 
-  const pmInner = '<div style="padding:4px 0">' + [
-    ['PM/BR080-Egg Cooker 1200-Calibration.pdf','Egg Cooker 1200 Calibration'],
-    ['PM/BR081-Egg Utensils-Check Condition.pdf','Egg Utensils Check Condition'],
-    ['PM/EL260-Electrical-Condition Check.pdf','Electrical Condition Check'],
-    ['PM/FD030B-Franke F3DN-Monthly Clean.pdf','Franke F3DN Monthly Clean'],
-    ['PM/FL173-Shortening Disposal Unit-Condition Check.pdf','Shortening Disposal Unit'],
-    ['PM/FL174-OSCAR-Cleaning.pdf','OSCAR Cleaning'],
-    ['PM/FR029-Fry Bagging Station-Condition Check.pdf','Fry Bagging Station'],
-    ['PM/FR033-Franke Fry Dispenser-Clean Filter.pdf','Franke Fry Dispenser Filter'],
-    ['PM/FR036-Frymaster Built in Filtering System-Replace 0rings.pdf','Frymaster Filtering System'],
-    ['PM/HU065A-Prince Castle Pie Merchandiser-Calibration.pdf','Pie Merchandiser Calibration'],
-    ['PM/MC096-Microwave Amana-Efficiency Test.pdf','Microwave Efficiency Test'],
-    ['PM/MC097-Microwave Amana-Maintenance Check.pdf','Microwave Maintenance Check'],
-    ['PM/OE273-TLoop Hearing System.pdf','T-Loop Hearing System'],
-    ['PM/RE194-Main Freezer&Chiller-Check Condition.pdf','Main Freezer & Chiller'],
-    ['PM/RE195-Refrigeration DC800-Check Condition.pdf','Refrigeration DC800'],
-    ['PM/RE196-Refrigeration-Check Condition.pdf','Refrigeration Check'],
-    ['PM/SS140-Taylor C602-Calibration.pdf','Taylor C602 Calibration'],
-    ['PM/SS141F-Taylor C602-Clean.pdf','Taylor C602 Clean'],
-    ['PM/SS141G-Taylor C602-Assemble.pdf','Taylor C602 Assemble'],
-    ['PM/SS144-Taylor C602-Clean Syrup.pdf','Taylor C602 Clean Syrup'],
-    ['PM/SSXXX-All Models-Red Bucket Use.pdf','Red Bucket Use'],
-    ['PM/TS120-Muffin Toaster-Check Load Timers.pdf','Muffin Toaster Check Timers'],
-    ['PM/TS121-Muffin Toaster-Maintenance.pdf','Muffin Toaster Maintenance'],
-  ].map(([f,l]) => resFile(BASE+f, l)).join('') + '</div>';
-
   document.getElementById('resources-container').innerHTML =
     resSection('res-cleaning', '🧹', 'Cleaning Cards', cleaningInner) +
-    resSection('res-operations', '⚙️', 'Operations', operationsInner) +
-    resSection('res-pm', '🔧', 'PM', pmInner);
+    resSection('res-maintenance', '🔧', 'Maintenance', maintInner) +
+    resSection('res-operations', '⚙️', 'Operations', operationsInner);
 }
 
 function toggleResource(id) {
