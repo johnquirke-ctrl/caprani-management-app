@@ -778,6 +778,16 @@ const USERS = [
     restaurants:   ['7131', '7177']
   },
   {
+    username:      '52ff0394dde3f5c22aa54118acd4955c4f5f5d88064dc5b16898cc0508c6f2d8', // hd
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 1234
+    displayName:   'c60183479a24e83ae2606a39a538d1082456f12f3a5f74d37ba745d61fe311c9', // Hannah Dooley
+    label:         'HD',
+    name:          'Hannah Dooley',
+    usernameLabel: 'hd',
+    role:          'area_leader',
+    restaurants:   ['7131']
+  },
+  {
     username:      '9b7ecc6eeb83abf9ade10fe38865df4499be3568dcc507ae2ec3b44989cb0093', // dd
     pin:           '4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc', // 7972
     displayName:   'ea0246624bc061875ee6d98e08171a6b2ca419fa3b3818986da5063b6d027124', // Dora Danko
@@ -2671,11 +2681,12 @@ function pushCleaningToSheets(area, name, freq) {
     daysOverdue = Math.round((today - lastDue) / msPerDay);
   }
 
+  const user = getCurrentUserEntry();
   const params = new URLSearchParams({
     action:      'cleaning',
     date:        todayKey(),
     time:        now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'}),
-    manager:     currentManager,
+    manager:     user ? user.name : currentManager,
     area:        area,
     task:        name,
     freq:        freqLabel(freq),
@@ -2999,11 +3010,12 @@ function alertDismiss() {
 // SHEETS_URL is set dynamically at login based on restaurant — see RESTAURANTS config above
 
 function pushCheckToSheets(slot, checkedAt) {
+  const user = getCurrentUserEntry();
   const params = new URLSearchParams({
     action:    'log',
     date:      todayKey(),
     slot:      slot,
-    manager:   currentManager,
+    manager:   user ? user.name : currentManager,
     checkedAt: checkedAt
   });
   const url = SHEETS_URL + '?' + params.toString();
