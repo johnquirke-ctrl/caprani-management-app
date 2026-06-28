@@ -2503,7 +2503,7 @@ function renderTodo() {
   updateTodoBadge();
 
   const countEl = document.getElementById('todo-count-header');
-  countEl.innerHTML = open.length > 0 ? `<span class="todo-count-badge">${open.length}</span>` : '';
+  if (countEl) countEl.innerHTML = open.length > 0 ? `<span class="todo-count-badge">${open.length}</span>` : '';
 
   const priColors = {a:'#FCEBEB',b:'#FAEEDA',c:'#E6F1FB',d:'#f0f0ec'};
   const priText   = {a:'#A32D2D',b:'#854F0B',c:'#185FA5',d:'#555'};
