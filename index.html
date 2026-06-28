@@ -1883,11 +1883,11 @@ function changeShiftType() {
   renderShiftTypeSelector();
 }
 
-function selectShiftType(type) {
+function selectShiftType(type, silent = false) {
   const completed = getCompletedShiftTypes();
 
-  // If already completed, ask for confirmation
-  if (completed.has(type)) {
+  // If already completed, ask for confirmation — unless called silently (e.g. on login restore)
+  if (completed.has(type) && !silent) {
     const label = type.charAt(0).toUpperCase() + type.slice(1);
     if (!confirm(`A ${label} shift checklist has already been completed today. Are you sure you want to start another one?`)) return;
   }
@@ -1903,6 +1903,7 @@ function selectShiftType(type) {
     fbSet(todayKey() + '/shift/' + type, {
       checked: [], priorities: {}, notes: {}, signedOff: false
     });
+    fbSet(todayKey() + '/postShift/' + type + '/checked', []);
   }
 
   const tag = document.getElementById('shift-tag-label');
@@ -1928,7 +1929,7 @@ function restoreShiftType() {
   if (s.activeShift && s.activeShift[currentManager]) {
     const active = s.activeShift[currentManager];
     if (active.date === todayKey()) {
-      selectShiftType(active.type);
+      selectShiftType(active.type, true);
       return;
     } else {
       // Stale — clear it
@@ -3806,33 +3807,28 @@ function pushBreakSheetToSheets(isTest = false) {
 }
 
 function pushShiftDataToSheets() {
-  // Pre-shift: push current shift type only, at point of sign-off
   const now = new Date();
   const signOffTime = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const user = getCurrentUserEntry();
   const managerFullName = user ? user.name : currentManager;
+  const checked    = getShiftChecked();
+  const priorities = getShiftPriorities();
+  const notes      = getShiftNotes();
 
-  const rows = [];
-  SHIFT_TASKS.forEach(t => {
-    const checked    = getShiftChecked();
-    const priorities = getShiftPriorities();
-    const notes      = getShiftNotes();
+  const rows = SHIFT_TASKS.map(t => {
     const isDone = checked.has(t.name);
     const pri    = priorities[t.name] || '';
     const note   = notes[t.name] || '';
     const status = isDone ? 'Done' : pri ? 'Flagged – ' + pri.toUpperCase() : 'Not actioned';
-    rows.push([todayKey(), currentShiftType.charAt(0).toUpperCase()+currentShiftType.slice(1), t.area, t.name, status, pri.toUpperCase(), note, managerFullName, signOffTime]);
+    return [todayKey(), currentShiftType.charAt(0).toUpperCase()+currentShiftType.slice(1), t.area, t.name, status, pri.toUpperCase(), note, managerFullName, signOffTime, 'Pre-Shift'];
   });
 
   if (rows.length === 0) return;
 
-  const params = new URLSearchParams({
-    action: 'shift',
-    date:   todayKey(),
-    rows:   JSON.stringify(rows)
-  });
-  fetch(SHEETS_URL + '?' + params.toString())
-    .catch(err => console.error('Shift push error:', err));
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'shift', date: todayKey(), rows })
+  }).catch(err => console.error('Shift push error:', err));
 }
 
 function pushPostShiftDataToSheets() {
@@ -3849,13 +3845,10 @@ function pushPostShiftDataToSheets() {
 
   if (rows.length === 0) return;
 
-  const params = new URLSearchParams({
-    action: 'shift',
-    date:   todayKey(),
-    rows:   JSON.stringify(rows)
-  });
-  fetch(SHEETS_URL + '?' + params.toString())
-    .catch(err => console.error('Post-shift push error:', err));
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'shift', date: todayKey(), rows })
+  }).catch(err => console.error('Post-shift push error:', err));
 }
 
 function pushTodoToSheets() {
