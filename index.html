@@ -1987,19 +1987,38 @@ function renderTravelPath() {
   });
   document.getElementById('travel-path-list').innerHTML = html;
 
-  // Restore log
+  // Restore only this manager's log
   const s = getState();
-  travelPathLog = (s.travelPathLog && s.travelPathLog[todayKey()]) || [];
+  const allLogs = (s.travelPathLog && s.travelPathLog[todayKey()]) || [];
+  travelPathLog = allLogs.filter(e => e.manager === currentManager);
   renderTravelPathLog();
 }
 
 function logTravelPath() {
-  const ts = new Date().toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'});
-  travelPathLog.push({ time: ts, manager: currentManager });
+  const now = new Date();
+  const ts = now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'});
+  const entry = { time: ts, manager: currentManager };
+  travelPathLog.push(entry);
+
+  // Save all managers' logs together in localStorage
   const s = getState();
   if (!s.travelPathLog) s.travelPathLog = {};
-  s.travelPathLog[todayKey()] = travelPathLog;
+  const allLogs = (s.travelPathLog[todayKey()] || []).filter(e => e.manager !== currentManager);
+  s.travelPathLog[todayKey()] = [...allLogs, ...travelPathLog];
   saveState(s);
+
+  // Push to Sheets
+  const user = getCurrentUserEntry();
+  const params = new URLSearchParams({
+    action:    'travelpath',
+    date:      todayKey(),
+    time:      ts,
+    manager:   user ? user.name : currentManager,
+    shiftType: currentShiftType || ''
+  });
+  fetch(SHEETS_URL + '?' + params.toString())
+    .catch(err => console.error('Travel path push error:', err));
+
   renderTravelPathLog();
 }
 
@@ -2268,6 +2287,7 @@ function signOffShift() {
 
   renderTodo();
   updateTodoBadge();
+  pushShiftDataToSheets();
   setTimeout(() => setShiftPhase('during'), 1200);
 }
 
@@ -2350,6 +2370,7 @@ function signOffPostShift() {
   document.getElementById('post-signed-note').textContent = `${done} of ${total} post-shift actions completed.`;
   box.style.display = 'block';
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  pushPostShiftDataToSheets();
 }
 
 
@@ -3777,40 +3798,56 @@ function pushBreakSheetToSheets(isTest = false) {
 }
 
 function pushShiftDataToSheets() {
-  // Nightly push is now handled by Apps Script reading Firebase directly.
-  // This function remains for any manual/fallback push from the app.
-  const shiftTypes = ['open', 'day', 'close'];
+  // Pre-shift: push current shift type only, at point of sign-off
+  const now = new Date();
+  const signOffTime = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const user = getCurrentUserEntry();
+  const managerFullName = user ? user.name : currentManager;
+
   const rows = [];
-
-  shiftTypes.forEach(type => {
-    // Read from localStorage fallback (Firebase is the source of truth but
-    // Apps Script reads Firebase directly at 2am)
-    const s = getState();
-    const key = todayKey() + '_' + type;
-    const checked    = new Set((s.shiftChecked    && s.shiftChecked[key])    || []);
-    const priorities = (s.shiftPriorities && s.shiftPriorities[key]) || {};
-    const notes      = (s.shiftNotes      && s.shiftNotes[key])      || {};
-
-    if (checked.size === 0 && Object.keys(priorities).length === 0) return;
-
-    SHIFT_TASKS.forEach(t => {
-      const isDone = checked.has(t.name);
-      const pri    = priorities[t.name] || '';
-      const note   = notes[t.name] || '';
-      const status = isDone ? 'Done' : pri ? 'Flagged – ' + pri.toUpperCase() : 'Not actioned';
-      rows.push([todayKey(), type.charAt(0).toUpperCase()+type.slice(1), t.area, t.name, status, pri.toUpperCase(), note]);
-    });
+  SHIFT_TASKS.forEach(t => {
+    const checked    = getShiftChecked();
+    const priorities = getShiftPriorities();
+    const notes      = getShiftNotes();
+    const isDone = checked.has(t.name);
+    const pri    = priorities[t.name] || '';
+    const note   = notes[t.name] || '';
+    const status = isDone ? 'Done' : pri ? 'Flagged – ' + pri.toUpperCase() : 'Not actioned';
+    rows.push([todayKey(), currentShiftType.charAt(0).toUpperCase()+currentShiftType.slice(1), t.area, t.name, status, pri.toUpperCase(), note, managerFullName, signOffTime]);
   });
 
   if (rows.length === 0) return;
 
   const params = new URLSearchParams({
     action: 'shift',
-    date: todayKey(),
-    rows: JSON.stringify(rows)
+    date:   todayKey(),
+    rows:   JSON.stringify(rows)
   });
   fetch(SHEETS_URL + '?' + params.toString())
     .catch(err => console.error('Shift push error:', err));
+}
+
+function pushPostShiftDataToSheets() {
+  const now = new Date();
+  const signOffTime = now.toLocaleString('en-IE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const user = getCurrentUserEntry();
+  const managerFullName = user ? user.name : currentManager;
+  const checked = getPostShiftChecked();
+
+  const rows = POST_SHIFT_TASKS.map(t => {
+    const isDone = checked.has(t.name);
+    return [todayKey(), currentShiftType.charAt(0).toUpperCase()+currentShiftType.slice(1), t.area || '', t.name, isDone ? 'Done' : 'Not done', '', '', managerFullName, signOffTime, 'Post-Shift'];
+  });
+
+  if (rows.length === 0) return;
+
+  const params = new URLSearchParams({
+    action: 'shift',
+    date:   todayKey(),
+    rows:   JSON.stringify(rows)
+  });
+  fetch(SHEETS_URL + '?' + params.toString())
+    .catch(err => console.error('Post-shift push error:', err));
 }
 
 function pushTodoToSheets() {
