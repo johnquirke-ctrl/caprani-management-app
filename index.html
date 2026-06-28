@@ -1897,6 +1897,14 @@ function selectShiftType(type) {
   if (!s.activeShift) s.activeShift = {};
   s.activeShift[currentManager] = { type, date: todayKey() };
   saveState(s);
+
+  // If restarting a completed shift type, wipe the Firebase state first
+  if (completed.has(type)) {
+    fbSet(todayKey() + '/shift/' + type, {
+      checked: [], priorities: {}, notes: {}, signedOff: false
+    });
+  }
+
   const tag = document.getElementById('shift-tag-label');
   tag.textContent = type.charAt(0).toUpperCase() + type.slice(1);
   tag.className = 'shift-tag shift-' + (type === 'open' ? 'open' : type === 'day' ? 'mid' : 'close');
