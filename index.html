@@ -309,7 +309,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- EDIT USER MODAL -->
+<!-- SALES REMINDER MODAL -->
+<div id="sales-reminder-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;animation:popIn 0.2s ease">
+    <div style="background:#d4000a;padding:1.25rem 1.5rem;text-align:center">
+      <div style="font-size:36px;margin-bottom:6px">📊</div>
+      <div style="font-size:17px;font-weight:700;color:#fff">Hourly Check</div>
+    </div>
+    <div style="padding:1.5rem;text-align:center">
+      <p style="font-size:15px;color:#1a1a1a;line-height:1.6;font-weight:500">Please check sales, car counts and speed of service times — communicate results back to team!</p>
+      <button onclick="document.getElementById('sales-reminder-overlay').style.display='none'"
+        style="margin-top:1.25rem;width:100%;padding:13px;border-radius:10px;background:#d4000a;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
+        Got it
+      </button>
+    </div>
+  </div>
+</div>
 <div id="edit-user-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:1.5rem">
   <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;animation:popIn 0.2s ease">
     <div style="background:#1a1a1a;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between">
@@ -1290,7 +1305,8 @@ function initApp() {
   setInterval(updateDateTime, 30000);
   setInterval(renderToilet, 60000);
   setInterval(checkToiletAlert, 30000);
-  setInterval(checkBreakSheetAlerts, 60000); // check midnight reminder and 2am push
+  setInterval(checkBreakSheetAlerts, 60000);
+  setInterval(checkHourlySalesReminder, 60000); // check every minute for 5-past-the-hour
   // Refresh session timestamp every 5 minutes while active
   setInterval(() => {
     if (currentManager) {
@@ -1556,6 +1572,21 @@ function showPage(page) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.getElementById('nav-'+page).classList.add('active');
+}
+
+// ─── HOURLY SALES REMINDER ───────────────────────────────────────────
+let _lastSalesReminderHour = -1;
+
+function checkHourlySalesReminder() {
+  if (!currentManager) return;
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  // Fire at xx:05, between 08:05 and 23:05
+  if (m === 5 && h >= 8 && h <= 23 && h !== _lastSalesReminderHour) {
+    _lastSalesReminderHour = h;
+    document.getElementById('sales-reminder-overlay').style.display = 'flex';
+  }
 }
 
 // ─── PROFILE ─────────────────────────────────────────────────────────
