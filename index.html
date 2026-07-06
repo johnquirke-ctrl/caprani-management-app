@@ -309,7 +309,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- SALES REMINDER MODAL -->
+<!-- FORCE RESET PIN MODAL -->
+<div id="force-reset-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:600;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden">
+    <div style="background:#d4000a;padding:1.25rem 1.5rem;text-align:center">
+      <div style="font-size:32px;margin-bottom:6px">🔒</div>
+      <div style="font-size:17px;font-weight:700;color:#fff">Set a new PIN</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.85);margin-top:4px">Your PIN has been reset. Please choose a new 4-digit PIN to continue.</div>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:4px">New PIN</div>
+        <input type="password" id="force-reset-new" maxlength="4" inputmode="numeric" pattern="[0-9]*"
+          placeholder="Enter new 4-digit PIN"
+          style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:16px;font-family:inherit;text-align:center;letter-spacing:6px">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:4px">Confirm PIN</div>
+        <input type="password" id="force-reset-confirm" maxlength="4" inputmode="numeric" pattern="[0-9]*"
+          placeholder="Confirm new PIN"
+          style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:16px;font-family:inherit;text-align:center;letter-spacing:6px">
+      </div>
+      <div id="force-reset-error" style="display:none;font-size:12px;color:#d4000a;text-align:center"></div>
+      <button onclick="confirmForceResetPin()"
+        style="width:100%;padding:13px;border-radius:10px;background:#d4000a;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px">
+        Save new PIN
+      </button>
+    </div>
+  </div>
+</div>
 <div id="sales-reminder-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;padding:1.5rem">
   <div style="background:#fff;border-radius:16px;width:100%;max-width:340px;overflow:hidden;animation:popIn 0.2s ease">
     <div style="background:#d4000a;padding:1.25rem 1.5rem;text-align:center">
@@ -774,131 +802,144 @@ const USERS = [
     name:          'Hannah Dooley',
     usernameLabel: 'hd',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '9b7ecc6eeb83abf9ade10fe38865df4499be3568dcc507ae2ec3b44989cb0093', // dd
-    pin:           '4f6a7e2f3eec64b32399009d31930433c552abc89e8bbe0bb0006f511bdc0acc', // 7972
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 7972
     displayName:   'ea0246624bc061875ee6d98e08171a6b2ca419fa3b3818986da5063b6d027124', // Dora Danko
     label:         'DD',
     name:          'Dora Danko',
     usernameLabel: 'dd',
     role:          'salaried',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      'fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603', // ab
-    pin:           'fb15ed71f582968fec5d17c1481180606536935a7cac5bb8f905cf3000c82587', // 6481
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 6481
     displayName:   '22cbfe0aa93fe51165c3f566c1717e349164494dd06108e1f5600416eefb6e0b', // Anna Beleznai
     label:         'AB',
     name:          'Anna Beleznai',
     usernameLabel: 'ab',
     role:          'shift_manager',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '7f093592aebbb47767b5655699cdab8c86c4b24f5c93e3b22a3c2538856e9bf1', // ak
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '49833c804be0351528c61e575421d27c70ade4a676e7d2e3506eb662ae0bf942', // Anna Kutserak
     label:         'AK',
     name:          'Anna Kutserak',
     usernameLabel: 'ak',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '3d099d0f13df9d0bb4427a6ce99d61b988861761e286d6e34b17d6371b46b13f', // bo
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '16d81f34e227b976841b3de8175aab729a93b1680034440f83c6f7186e483036', // Brian Owens
     label:         'BO',
     name:          'Brian Owens',
     usernameLabel: 'bo',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      'f9c7af7ebcbf098b9f5f37361d1b168bb2e5b98d930ceef0f055377a8c94db61', // ds
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   'c93889dd5b157de95804bf44e8668e6cb038cecc8a8b2ace868ac610e4934a9a', // Daniel Strachan
     label:         'DS',
     name:          'Daniel Strachan',
     usernameLabel: 'ds',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      'c380779f6175766fdbe90940851fff3995d343c63bbb82f816843c1d5100865e', // fg
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   'e29aed720bc32b8a775ee8478134ecc8cbefc8277497818b5c252ad2a681f94d', // Fergal Giblin
     label:         'FG',
     name:          'Fergal Giblin',
     usernameLabel: 'fg',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '72a7ab318788b3628e9f10ad3dcb0ee63eeb1dd0ce0f246fdab0740a391f8fae', // ik
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   'b3c14de3552b630365a60a208c44b1ad28d733bc886131dab20651181705b944', // Iryna Koloskova
     label:         'IK',
     name:          'Iryna Koloskova',
     usernameLabel: 'ik',
     role:          'shift_manager',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '9732c83e3e03fffde2ee65a9d826df8c4dd623c27fb92b952fe62a02f0726f87', // jp
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '49312646d6137d90b079d17aa8f8ea4e54e5863986e1e8928eaee59233547f25', // Jim Paxman
     label:         'JP',
     name:          'Jim Paxman',
     usernameLabel: 'jp',
     role:          'shift_manager',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      'd3f3fa6892497db10a2417fce9b553464cc5d07718419de8b67e73e460c7daab', // kl
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '349fad7436027a25e39a588c9cb48285bfba77573faafec9dd71991a7f3a4ac0', // Katie Laffan
     label:         'KL',
     name:          'Katie Laffan',
     usernameLabel: 'kl',
     role:          'salaried',
-    restaurants:   ['7131', '7177']
+    restaurants:   ['7131', '7177'],
+    mustResetPin:   true,
   },
   {
     username:      'a9f615c4e7d33cf9a6a23ab8be8800eb0cf68410f011953a4bfa64e1c372f734', // lh
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '929184caa69b0985481f211dc4f4773dc8b0bf328d1e425a9b553b94f540482d', // Liam Hayes
     label:         'LH',
     name:          'Liam Hayes',
     usernameLabel: 'lh',
     role:          'area_leader',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '6194e73eb25916046397e515de98f4e4357e06af9f3054d347ffe82aadfd8bf2', // nr
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   '3d6cb36d3a649d3057d8850d5ffa3aee48827f7709cea72c5c93cec09814a699', // Nathan Ryan
     label:         'NR',
     name:          'Nathan Ryan',
     usernameLabel: 'nr',
     role:          'shift_manager',
-    restaurants:   ['7131']
+    restaurants:   ['7131'],
+    mustResetPin:   true,
   },
   {
     username:      '571b0e35550136585f653a70460974d32f85879142300ecb361eff423ac62cd4', // rs
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   'f81fd0b6d985bd3d7c4ea0db203985dbe772e29bf36a73318d387b7249057cb0', // Rebecca Simmons
     label:         'RS',
     name:          'Rebecca Simmons',
     usernameLabel: 'rs',
     role:          'salaried',
-    restaurants:   ['7131', '7177']
+    restaurants:   ['7131', '7177'],
+    mustResetPin:   true,
   },
   {
     username:      '03042cf8100db386818cee4ff0f2972431a62ed78edbd09ac08accfabbefd818', // sd
-    pin:           '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab', // 2026
+    pin:           '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 2026
     displayName:   'c54a781788fba3cf44960abc2563b5fd1f4ed691f9ab0b29a3e2334b26b1692e', // Scott Daly
     label:         'SD',
     name:          'Scott Daly',
@@ -1303,6 +1344,16 @@ function initApp() {
   if (breakDays.length > 0) initBreakListener();
   initBreakScheduleListener();
   renderResources();
+  // Check if this user needs to reset their PIN
+  const userEntry = getCurrentUserEntry();
+  if (userEntry && userEntry.mustResetPin) {
+    const overrides = getProfileOverrides();
+    // Only prompt if they haven't already set their own PIN via override
+    if (!overrides[userEntry.label + '_pin']) {
+      document.getElementById('force-reset-overlay').style.display = 'flex';
+      return; // Don't proceed to shift page until reset done
+    }
+  }
   showPage('shift');
 }
 
@@ -1546,6 +1597,37 @@ function showPage(page) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.getElementById('nav-'+page).classList.add('active');
+}
+
+async function confirmForceResetPin() {
+  const newPin     = document.getElementById('force-reset-new').value.trim();
+  const confirmPin = document.getElementById('force-reset-confirm').value.trim();
+  const errorEl    = document.getElementById('force-reset-error');
+
+  if (!/^\d{4}$/.test(newPin)) {
+    errorEl.textContent = 'PIN must be exactly 4 digits.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (newPin !== confirmPin) {
+    errorEl.textContent = 'PINs do not match — please try again.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (newPin === '1234') {
+    errorEl.textContent = 'Please choose a different PIN.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  // Save as profile override
+  const overrides = getProfileOverrides();
+  overrides[currentManager + '_pin'] = await hashString(newPin);
+  saveProfileOverrides(overrides);
+
+  document.getElementById('force-reset-overlay').style.display = 'none';
+  showToast('✓ PIN updated successfully');
+  showPage('shift');
 }
 
 // ─── HOURLY SALES REMINDER ───────────────────────────────────────────
@@ -2380,6 +2462,23 @@ function signOffPostShift() {
   box.style.display = 'block';
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
   pushPostShiftDataToSheets();
+
+  // Push reflection note to Sheets
+  const reflection = document.getElementById('post-reflection').value.trim();
+  if (reflection) {
+    const user = getCurrentUserEntry();
+    const now = new Date();
+    const params = new URLSearchParams({
+      action:    'note',
+      date:      todayKey(),
+      time:      now.toLocaleString('en-IE',{hour:'2-digit',minute:'2-digit'}),
+      manager:   user ? user.name : currentManager,
+      shiftType: currentShiftType || '',
+      note:      reflection
+    });
+    fetch(SHEETS_URL + '?' + params.toString())
+      .catch(err => console.error('Note push error:', err));
+  }
 }
 
 
