@@ -20,3 +20,8 @@
   [headers.values]
     Content-Type = "application/pdf"
     Content-Disposition = "inline"
+
+[[headers]]
+  for = "/Public/*"
+  [headers.values]
+    Content-Disposition = "inline"
